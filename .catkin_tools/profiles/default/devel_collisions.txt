@@ -1,0 +1,1 @@
+/home/stereo/STEREO_SYSTEM/devel/./cmake.lock 876
