@@ -48,35 +48,18 @@ struct ChData {
 	int num_disparities;
 	int lambda;
 	float sigma;
-	//int disp_12_max_diff;
-	//int speckle_range;
-	//int speckle_window_size;
-	//int pre_filter_cap;
-	//int pre_filter_size;
-	//int pre_filter_type;
-	//int texture_threshold;
-	//int uniqueness_ratio;
-	//int mode;
-
-
-
 	bool live_update;
 
 	/* Defalt values */
 	static const int DEFAULT_BLOCK_SIZE = 5;
-	//static const int DEFAULT_MIN_DISPARITY = 0;
 	static const int DEFAULT_NUM_DISPARITIES = 64;
 	static const int DEFAULT_LAMBDA = 5000;
 	static const float DEFAULT_SIGMA = 1.5;
-
-	/*
-	static const int DEFAULT_TEXTURE_THRESHOLD = 0;
-	static const int DEFAULT_MODE = StereoSGBM::MODE_SGBM;*/
+	//static const int DEFAULT_MIN_DISPARITY = 0;
 
 	ChData() : matcher_type(BM), block_size(DEFAULT_BLOCK_SIZE), //min_disparity(DEFAULT_MIN_DISPARITY),
-			num_disparities(DEFAULT_NUM_DISPARITIES), lambda(DEFAULT_LAMBDA), sigma(DEFAULT_SIGMA),/*
-			texture_threshold(DEFAULT_TEXTURE_THRESHOLD),
-			mode(DEFAULT_MODE),*/ live_update(true)
+			num_disparities(DEFAULT_NUM_DISPARITIES), lambda(DEFAULT_LAMBDA), sigma(DEFAULT_SIGMA),
+			live_update(true)
 		{}
 };
 
@@ -93,8 +76,8 @@ void update_matcher(ChData *data) {
 	right_matcher = data->right_matcher.dynamicCast<StereoMatcher>();
 
 
-		//If we have the wrong type of matcher, let's create a new one:
-		if (!left_matcher) {
+	//If we have the wrong type of matcher, let's create a new one:
+	if (!left_matcher) {
 			data->cv_left_for_matcher = (data->cv_image_left).clone();
 			data->cv_right_for_matcher = (data->cv_image_right).clone();
 			data->stereo_matcher = left_matcher = StereoBM::create(data->num_disparities, data->block_size);
@@ -105,12 +88,12 @@ void update_matcher(ChData *data) {
 			gtk_widget_set_sensitive(data->sc_num_disparities, true);
 			gtk_widget_set_sensitive(data->sc_lambda, true);
 			gtk_widget_set_sensitive(data->sc_sigma, true);
-		}
+	}
 	data->stereo_matcher->setBlockSize(data->block_size);
-	//stereo_bm->setMinDisparity(data->min_disparity);
 	data->stereo_matcher->setNumDisparities(data->num_disparities);
 	data->wls_filter->setLambda(data->lambda);
 	data->wls_filter->setSigmaColor(data->sigma);
+	//stereo_bm->setMinDisparity(data->min_disparity);
 
 
 	clock_t t;
@@ -128,10 +111,7 @@ void update_matcher(ChData *data) {
 	getDisparityVis(data->cv_image_disparity,data->cv_image_disparity,1.0);
 	normalize(data->cv_image_disparity, data->cv_image_disparity_normalized, 0, 255, NORM_MINMAX);
 	applyColorMap(data->cv_image_disparity_normalized, data->cv_color_image, COLORMAP_JET);
-	//normalize(data->cv_image_disparity, data->cv_image_disparity_normalized, 0,
-		//	255, CV_MINMAX, CV_8UC1);
-	//cvtColor(data->cv_image_disparity_normalized, data->cv_color_image,
-		//	CV_GRAY2RGB);
+
 	Mat dummy_to_scale; //= (data->cv_color_image).clone();
 	resize(data->cv_color_image, dummy_to_scale, Size(), 0.58, 0.58, CV_INTER_AREA);
 	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(
@@ -140,14 +120,6 @@ void update_matcher(ChData *data) {
 			dummy_to_scale.rows, dummy_to_scale.step,
 			NULL, NULL);
 	gtk_image_set_from_pixbuf(data->image_depth, pixbuf);
-	/*GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(
-			(guchar*) data->cv_color_image.data, GDK_COLORSPACE_RGB, false,
-			8, data->cv_color_image.cols,
-			data->cv_color_image.rows, data->cv_color_image.step,
-			NULL, NULL);
-	gtk_image_set_from_pixbuf(data->image_depth, pixbuf);*/
-
-
 }
 
 void update_interface(ChData *data) {
@@ -159,10 +131,10 @@ void update_interface(ChData *data) {
 	}
 
 	gtk_adjustment_set_value(data->adj_block_size,data->block_size);
-	//gtk_adjustment_set_value(data->adj_min_disparity,data->min_disparity);
 	gtk_adjustment_set_value(data->adj_num_disparities,data->num_disparities);
 	gtk_adjustment_set_value(data->adj_lambda,data->lambda);
 	gtk_adjustment_set_value(data->adj_sigma,data->sigma);
+	//gtk_adjustment_set_value(data->adj_min_disparity,data->min_disparity);
 
 
 	data->live_update = true;
@@ -403,8 +375,6 @@ G_MODULE_EXPORT void on_btn_defaults_clicked(GtkButton *b, ChData *data) {
 	data->num_disparities = ChData::DEFAULT_NUM_DISPARITIES;
 	data->lambda = ChData::DEFAULT_LAMBDA;
 	data->sigma = ChData::DEFAULT_SIGMA;
-	/*
-	data->mode = ChData::DEFAULT_MODE;*/
 	update_interface(data);
 }
 }
@@ -452,10 +422,8 @@ int main(int argc, char *argv[]) {
 	/* Get main window pointer from UI */
 	data->main_window = GTK_WIDGET(gtk_builder_get_object(builder, "window1"));
 	data->image_left = GTK_IMAGE(gtk_builder_get_object(builder, "image_left"));
-	data->image_right = GTK_IMAGE(
-			gtk_builder_get_object(builder, "image_right"));
-	data->image_depth = GTK_IMAGE(
-			gtk_builder_get_object(builder, "image_disparity"));
+	data->image_right = GTK_IMAGE(gtk_builder_get_object(builder, "image_right"));
+	data->image_depth = GTK_IMAGE(gtk_builder_get_object(builder, "image_disparity"));
 
 	data->sc_block_size = GTK_WIDGET(gtk_builder_get_object(builder, "sc_block_size"));
 	data->sc_min_disparity = GTK_WIDGET(gtk_builder_get_object(builder, "sc_min_disparity"));
