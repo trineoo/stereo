@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -52,7 +52,7 @@ void loadMonocularNodelets(nodelet::Loader& manager, const std::string& side,
   std::string image_rect_topic       = ros::names::resolve(side + "/image_rect");
   std::string image_rect_color_topic = ros::names::resolve(side + "/image_rect_color");
   std::string camera_info_topic      = ros::names::resolve(side + "/camera_info");
-  
+
   // Debayer nodelet: image_raw -> image_mono, image_color
   remappings["image_raw"]   = image_raw_topic;
   remappings["image_mono"]  = image_mono_topic;
@@ -126,7 +126,8 @@ int main(int argc, char **argv)
   // NOTE: Using node name for the disparity nodelet because it is the only one using
   // dynamic_reconfigure so far, and this makes us backwards-compatible with cturtle.
   std::string disparity_name = ros::this_node::getName();
-  manager.load(disparity_name, "stereo_image_proc/disparity", remappings, my_argv);
+  // trine manager.load(disparity_name, "stereo_image_proc/disparity", remappings, my_argv);
+  manager.load(disparity_name, "stereo_image_proc/disparityStereoBM", remappings, my_argv);
 
   // PointCloud2 nodelet
   // Inputs: left/image_rect_color, left/camera_info, right/camera_info, disparity

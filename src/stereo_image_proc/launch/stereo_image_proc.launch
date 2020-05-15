@@ -25,8 +25,12 @@
   </include>
 
   <!-- Disparity image -->
-  <node pkg="nodelet" type="nodelet" name="disparity"
+  <!--<node pkg="nodelet" type="nodelet" name="disparity"
         args="load stereo_image_proc/disparity $(arg manager) $(arg bond)"
+	respawn="$(arg respawn)" /> trine-->
+
+  <node pkg="nodelet" type="nodelet" name="disparityStereoBM"
+        args="load stereo_image_proc/disparityStereoBM $(arg manager) $(arg bond)"
 	respawn="$(arg respawn)" />
 
   <!-- PointCloud2 -->

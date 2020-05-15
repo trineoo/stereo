@@ -180,8 +180,6 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   const cv::Mat_<uint8_t> l_image = cv_bridge::toCvShare(l_image_msg, sensor_msgs::image_encodings::MONO8)->image;
   const cv::Mat_<uint8_t> r_image = cv_bridge::toCvShare(r_image_msg, sensor_msgs::image_encodings::MONO8)->image;
 
-
-  //trine dette burde nok legges inn
   disp_msg->valid_window.x_offset = range_disp + min_disp + wsize/2 -1;
   disp_msg->valid_window.y_offset = wsize/2;
   disp_msg->valid_window.width    = (l_image.size().width -1 - wsize/2 + min_disp) - (range_disp + min_disp + wsize/2 -1 ) ;// right - left;
@@ -195,7 +193,7 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
 
   Rect ROI;
   Ptr<DisparityWLSFilter> wls_filter;
-  double matching_time, filtering_time;
+  double matching_time;
   double solving_time = 0;
 
   if(filter=="wls_conf") // filtering with confidence (significantly better quality than wls_no_conf)
@@ -220,9 +218,7 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
         wls_filter = createDisparityWLSFilter(left_matcher);
         Ptr<StereoMatcher> right_matcher = createRightMatcher(left_matcher);
 
-        //cvtColor(left_for_matcher,  left_for_matcher,  COLOR_BGR2GRAY);
-        //cvtColor(right_for_matcher, right_for_matcher, COLOR_BGR2GRAY);
-
+        // Perform block matching to find the disparities
         matching_time = (double)getTickCount();
         left_matcher-> compute(left_for_matcher, right_for_matcher,left_disp);
         right_matcher->compute(right_for_matcher,left_for_matcher, right_disp);
@@ -230,39 +226,35 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
 
         wls_filter->setLambda(lambda);
         wls_filter->setSigmaColor(sigma);
-        filtering_time = (double)getTickCount();
         wls_filter->filter(left_disp,l_image,filtered_disp,right_disp);
-        filtering_time = ((double)getTickCount() - filtering_time)/getTickFrequency();
 
-        ROI = wls_filter->getROI();
+        /*ROI = wls_filter->getROI();
         if(!no_downscale)
         {
             // upscale raw disparity and ROI back for a proper comparison:
             resize(left_disp,left_disp,Size(),2.0,2.0,INTER_LINEAR_EXACT);
             left_disp = left_disp*2.0;
             ROI = Rect(ROI.x*2,ROI.y*2,ROI.width*2,ROI.height*2);
-        }
+        }*/
   }
 
-  /*std::cout.precision(2);
-  std::cout<<"Matching time:  "<<matching_time<<"s"<<std::endl;
-  std::cout<<"Filtering time: "<<filtering_time<<"s"<<std::endl;
-  std::cout<<"Solving time: "<<solving_time<<"s"<<std::endl;
-  std::cout<<std::endl;*/
-
-
-
-  cv::Mat filtered_disp_vis;
-  getDisparityVis(filtered_disp,filtered_disp_vis,vis_mult);
-  imwrite("directInToMatlabFilteredDispVIS.bmp",filtered_disp_vis);
-  imwrite("directInToMatlabFilteredDisp.bmp",filtered_disp);
+  //Dispaly and save images
+  //cv::Mat filtered_disp_vis;
+  //getDisparityVis(filtered_disp,filtered_disp_vis,vis_mult);
+  //imwrite("directInToMatlabFilteredDispVIS.bmp",filtered_disp_vis);
+  //imwrite("right.bmp",r_image);
+  //imwrite("left.bmp",l_image);
+  //filtered_disp=filtered_disp_vis.clone();
+  //normalize(filtered_disp_vis, filtered_disp_vis, 0, 255, NORM_MINMAX);
+	//bitwise_not(filtered_disp_vis, filtered_disp_vis);
+  //applyColorMap(filtered_disp_vis, filtered_disp_vis, COLORMAP_JET);
+  //imwrite("directInToMatlabFilteredDispVISCOL.bmp",filtered_disp_vis);
 
 
   //http://docs.ros.org/diamondback/api/stereo_image_proc/html/processor_8cpp_source.html
   // Fixed-point disparity is 16 times the true value: d = d_fp / 16.0 = x_l - x_r.
   static const int DPP = 16; // disparities per pixel
   static const double inv_dpp = 1.0 / DPP;
-
 
   //Filtered_disp is CV_16S
   sensor_msgs::Image& dimage = disp_msg->image;
@@ -283,12 +275,6 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   disp_msg->min_disparity = min_disp;
   disp_msg->max_disparity = min_disp + range_disp - 1;
   disp_msg->delta_d = inv_dpp;
-
-
-
-
-  // Perform block matching to find the disparities
-  //block_matcher_.processDisparity(l_image, r_image, model_, *disp_msg);
 
   // Adjust for any x-offset between the principal points: d' = d - (cx_l - cx_r)
   double cx_l = model_.left().cx();
