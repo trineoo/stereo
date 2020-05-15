@@ -8,7 +8,7 @@
 
   <!-- Use YOLOv3 Boats Simen -->
   <arg name="network_param_file"         default="$(find darknet_ros)/config/yolov3-boats.yaml"/>
-  <arg name="image" default="camera_array/left/image_raw" />
+  <arg name="image" default="camera_array/left/image_rect_color" />
 
 
   <!-- Include main launch file -->
