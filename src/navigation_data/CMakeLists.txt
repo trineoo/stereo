@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   geometry_msgs
   message_generation
+  custom_msgs
 )
 
 ## System dependencies are found with CMake's conventions

@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 import csv
 import math
+import string
 import numpy as np
 from std_msgs.msg import String
+from math import sqrt, atan, sin, cos, pi, radians
 
 
-
+'''
 def lla2ned(lat_deg, long_deg, altitude, lat0_deg, long0_deg, altitude0):
     deg2rad = np.pi/180
     rad2deg = 180/np.pi
@@ -58,38 +60,49 @@ def lla2ned(lat_deg, long_deg, altitude, lat0_deg, long0_deg, altitude0):
 
     NED = [N, E, D]
     return NED
+'''
 
+
+def lla2ned(latitude, longitude, latitude_ref, longitude_ref):
+	R = 6378137.0#Earth radius, WGS84
+	f = 0.003352810664747#Flattening factor, WGS84
+
+	d_lat = radians(latitude - latitude_ref)
+	d_long = radians(longitude - longitude_ref)
+
+	R_N = R/(sqrt(1.0-(2.0*f-f*f)*(sin(radians(latitude_ref))**2)))
+	R_M = R_N*(1-(2*f-f*f))/(1-(2*f-f*f)*(sin(radians(latitude_ref))**2))
+
+	dN = d_lat/(atan(1.0/R_M))
+	dE = d_long/(atan(1.0/(R_N*cos(radians(latitude_ref)))))
+
+	return [dN, dE, 0]
 
 def main():
+    ### Piren
     lat0_deg  = 63.4389029083
     long0_deg = 10.39908278
     altitude0 = 39.923
 
-    lat_deg = 63.438977
-    long_deg = 10.398927
+    lla_points = np.loadtxt('MA_track_points.csv', delimiter=',', skiprows=1, dtype=String)
 
-    lla_points = np.loadtxt('track_points.csv', delimiter=',', skiprows=1, dtype=String)
+    #lla_points = np.delete(lla_points, np.s_[2:6],1)
+    #lla_points = np.delete(lla_points, np.s_[5:29],1)
 
-    lla_points = np.delete(lla_points, np.s_[2:6],1)
-    lla_points = np.delete(lla_points, np.s_[5:29],1)
-
-    #with open('sjekk.csv','ab') as fd:
-    #    np.savetxt(fd, llt_points, delimiter=",", fmt="%s")
-
-    #lla_points = [lat_deg, long_deg]
-
-    #a = np.asarray([ ["X","Y","track_fid","track_seg","ele","time"]])
-    #with open('nyGPSData.csv','ab') as fd:
-    #    np.savetxt(fd, a, delimiter=",", fmt="%s")
+    a = np.asarray([ ["N","E","D","time"]])
+    with open('testGPSData.csv','ab') as fd:
+        np.savetxt(fd, a, delimiter=",", fmt="%s")
 
     for row in lla_points:
-        NED = np.asarray([lla2ned(float(row[0]), float(row[1]), 0.0, lat0_deg, long0_deg, altitude0)])
-        with open('nyGPSData.csv','ab') as fd:
-            np.savetxt(fd, NED, delimiter=",", fmt="%s")
+        NED = lla2ned(float(row[1]), float(row[0]), lat0_deg, long0_deg)
 
-    NED = [lla2ned(lat_deg, long_deg, altitude0, lat0_deg, long0_deg, altitude0)]
-    with open('nyGPSData.csv','ab') as fd:
-        np.savetxt(fd, NED, delimiter=",", fmt="%s")
+        string = row[6]
+        new_time = string[0:12] + str(int(string[12]) + 2) + string[13:len(string)]
+        b = np.asarray([ [NED, new_time]])
+
+        with open('testGPSData.csv','ab') as fd:
+            np.savetxt(fd, b, delimiter=",", fmt="%s")
+
 
 
 
