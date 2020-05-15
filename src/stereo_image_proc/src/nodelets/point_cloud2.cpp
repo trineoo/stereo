@@ -177,6 +177,7 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
   points_msg->width  = mat.cols;
   points_msg->is_bigendian = false;
   points_msg->is_dense = false; // there may be invalid points
+  points_msg->header.frame_id = "/velodyne"; //trine !! denn ela jeg inn
 
   sensor_msgs::PointCloud2Modifier pcd_modifier(*points_msg);
   pcd_modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
@@ -188,7 +189,7 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*points_msg, "g");
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*points_msg, "b");
 
-  float bad_point = 10000;//std::numeric_limits<float>::quiet_NaN (); !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  float bad_point = std::numeric_limits<float>::quiet_NaN (); //10000;//!trine!!!!!!!!!!!!!!!!!!!!!!!!!!!
   for (int v = 0; v < mat.rows; ++v)
   {
     for (int u = 0; u < mat.cols; ++u, ++iter_x, ++iter_y, ++iter_z)
@@ -196,9 +197,9 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
       if (isValidPoint(mat(v,u)))
       {
         // x,y,z
-        *iter_x = mat(v, u)[0];
-        *iter_y = mat(v, u)[1];
-        *iter_z = mat(v, u)[2];
+        *iter_x = mat(v, u)[0]/1000;
+        *iter_y = mat(v, u)[1]/1000;
+        *iter_z = mat(v, u)[2]/1000;
       }
       else
       {
@@ -210,7 +211,7 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
   // Fill in color
   namespace enc = sensor_msgs::image_encodings;
   const std::string& encoding = l_image_msg->encoding;
-  if (encoding == enc::MONO8)
+  if (encoding == enc::MONO8) // den går inn her
   {
     const cv::Mat_<uint8_t> color(l_image_msg->height, l_image_msg->width,
                                   (uint8_t*)&l_image_msg->data[0],
