@@ -51,9 +51,9 @@ struct ChData {
 	bool live_update;
 
 	/* Defalt values */
-	static const int DEFAULT_BLOCK_SIZE = 5;
-	static const int DEFAULT_NUM_DISPARITIES = 64;
-	static const int DEFAULT_LAMBDA = 5000;
+	static const int DEFAULT_BLOCK_SIZE = 9;
+	static const int DEFAULT_NUM_DISPARITIES = 144;
+	static const int DEFAULT_LAMBDA = 8000;
 	static const float DEFAULT_SIGMA = 1.5;
 	//static const int DEFAULT_MIN_DISPARITY = 0;
 
@@ -83,11 +83,13 @@ void update_matcher(ChData *data) {
 			data->stereo_matcher = left_matcher = StereoBM::create(data->num_disparities, data->block_size);
 			data->wls_filter = wls_filter = createDisparityWLSFilter(left_matcher);
 			data->right_matcher = right_matcher = createRightMatcher(left_matcher);
+			cvtColor(data->cv_left_for_matcher,  data->cv_left_for_matcher,  COLOR_BGR2GRAY);
+			cvtColor(data->cv_right_for_matcher, data->cv_right_for_matcher, COLOR_BGR2GRAY);
 			gtk_widget_set_sensitive(data->sc_block_size, true);
-			//gtk_widget_set_sensitive(data->sc_min_disparity, true);
 			gtk_widget_set_sensitive(data->sc_num_disparities, true);
 			gtk_widget_set_sensitive(data->sc_lambda, true);
 			gtk_widget_set_sensitive(data->sc_sigma, true);
+			//gtk_widget_set_sensitive(data->sc_min_disparity, true);
 	}
 	data->stereo_matcher->setBlockSize(data->block_size);
 	data->stereo_matcher->setNumDisparities(data->num_disparities);
@@ -100,7 +102,7 @@ void update_matcher(ChData *data) {
 	t = clock();
 	data->stereo_matcher->compute(data->cv_left_for_matcher, data->cv_right_for_matcher, data->cv_left_disp);
 	data->right_matcher->compute(data->cv_right_for_matcher, data->cv_left_for_matcher, data->cv_right_disp);
-  data->wls_filter->filter(data->cv_left_disp,data->cv_image_left, data->cv_image_disparity, data->cv_right_disp);
+	data->wls_filter->filter(data->cv_left_disp,data->cv_image_left, data->cv_image_disparity, data->cv_right_disp);
 	t = clock() - t;
 
 	gchar *status_message = g_strdup_printf("Disparity computation took %lf milliseconds",((double)t*1000)/CLOCKS_PER_SEC);
@@ -108,12 +110,16 @@ void update_matcher(ChData *data) {
 	gtk_statusbar_push(GTK_STATUSBAR(data->status_bar), data->status_bar_context, status_message);
 	g_free(status_message);
 
-	getDisparityVis(data->cv_image_disparity,data->cv_image_disparity,1.0);
-	normalize(data->cv_image_disparity, data->cv_image_disparity_normalized, 0, 255, NORM_MINMAX);
-	applyColorMap(data->cv_image_disparity_normalized, data->cv_color_image, COLORMAP_JET);
-
-	Mat dummy_to_scale; //= (data->cv_color_image).clone();
-	resize(data->cv_color_image, dummy_to_scale, Size(), 0.58, 0.58, CV_INTER_AREA);
+	//imwrite("rawDisparitymap.bmp",data->cv_image_disparity);
+	getDisparityVis(data->cv_image_disparity,data->cv_filtered_disp_vis,1.0);
+	//If the value is out of range, it is clamped to the minimum or maximum values.
+	//imwrite("clampedDisparity.bmp",data->cv_filtered_disp_vis);
+	normalize(data->cv_filtered_disp_vis, data->cv_filtered_disp_vis, 0, 255, NORM_MINMAX);
+	bitwise_not( data->cv_filtered_disp_vis, data->cv_filtered_disp_vis);
+  applyColorMap(data->cv_filtered_disp_vis, data->cv_color_image, COLORMAP_JET);
+	//imwrite("applyColorMap.bmp",data->cv_color_image);
+	Mat dummy_to_scale= (data->cv_color_image).clone();
+	resize(dummy_to_scale, dummy_to_scale, Size(), 0.58, 0.58, CV_INTER_AREA);
 	GdkPixbuf *pixbuf = gdk_pixbuf_new_from_data(
 			(guchar*) dummy_to_scale.data, GDK_COLORSPACE_RGB, false,
 			8, dummy_to_scale.cols,
@@ -135,7 +141,6 @@ void update_interface(ChData *data) {
 	gtk_adjustment_set_value(data->adj_lambda,data->lambda);
 	gtk_adjustment_set_value(data->adj_sigma,data->sigma);
 	//gtk_adjustment_set_value(data->adj_min_disparity,data->min_disparity);
-
 
 	data->live_update = true;
 	update_matcher(data);
@@ -197,7 +202,7 @@ G_MODULE_EXPORT void on_adj_num_disparities_value_changed( GtkAdjustment *adjust
 
 	value = (gint) gtk_adjustment_get_value( adjustment );
 
-	//te value must be divisible by 16, if it is not set it to the nearest multiple of 16
+	//The value must be divisible by 16, if it is not set it to the nearest multiple of 16
 	if (value % 16 != 0)
 	{
 		value += (16 - value%16);
@@ -238,14 +243,12 @@ G_MODULE_EXPORT void on_adj_sigma_value_changed( GtkAdjustment *adjustment, ChDa
 }
 
 
-
 G_MODULE_EXPORT void on_algo_sbm_clicked(GtkButton *b, ChData *data) {
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(b))) {
 		data->matcher_type = BM;
 		update_matcher(data);
 	}
 }
-
 
 
 G_MODULE_EXPORT void on_btn_save_clicked(GtkButton *b, ChData *data) {
@@ -367,7 +370,6 @@ G_MODULE_EXPORT void on_btn_load_clicked(GtkButton *b, ChData *data) {
 		g_free(filename);
 	}
 }
-
 G_MODULE_EXPORT void on_btn_defaults_clicked(GtkButton *b, ChData *data) {
 	data->matcher_type = BM;
 	data->block_size = ChData::DEFAULT_BLOCK_SIZE;
@@ -391,21 +393,17 @@ int main(int argc, char *argv[]) {
 	ChData *data;
 
 	//Read images to tune
-	Mat left_image = imread(left_filename,1);
+	Mat left_image = imread(left_filename,IMREAD_COLOR);
 	if(left_image.empty()) {printf("Could not read left image %s.\n",left_filename);exit(1);}
-	Mat right_image = imread(right_filename,1);
+	Mat right_image = imread(right_filename,IMREAD_COLOR);
 	if(right_image.empty()) {printf("Could not read right image %s.\n",right_filename);exit(1);}
 	if(left_image.size() != right_image.size()) {printf("Left and right images have different sizes.\n");exit(1);}
-
-	Mat gray_left, gray_right;
-	cvtColor(left_image,gray_left,CV_BGR2GRAY);
-	cvtColor(right_image,gray_right,CV_BGR2GRAY);
 
 	/* Create data */
 	data = new ChData();
 
-	data->cv_image_left = gray_left;
-	data->cv_image_right = gray_right;
+	data->cv_image_left = 	(left_image).clone();
+	data->cv_image_right = 	(right_image).clone();;
 
 	/* Init GTK+ */
 	gtk_init(&argc, &argv);
