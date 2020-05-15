@@ -5,7 +5,7 @@
   <object class="GtkAdjustment" id="adj_block_size">
     <property name="lower">5</property>
     <property name="upper">255</property>
-    <property name="value">5</property>
+    <property name="value">9</property>
     <property name="step_increment">2</property>
     <property name="page_increment">10</property>
     <signal name="value-changed" handler="on_adj_block_size_value_changed" swapped="no"/>
@@ -19,7 +19,7 @@
   <object class="GtkAdjustment" id="adj_num_disparities">
     <property name="lower">16</property>
     <property name="upper">2048</property>
-    <property name="value">64</property>
+    <property name="value">144</property>
     <property name="step_increment">16</property>
     <property name="page_increment">10</property>
     <signal name="value-changed" handler="on_adj_num_disparities_value_changed" swapped="no"/>
@@ -27,8 +27,8 @@
   <object class="GtkAdjustment" id="adj_lambda">
     <property name="lower">0</property>
     <property name="upper">20000</property>
-    <property name="value">5000</property>
-    <property name="step_increment">1</property>
+    <property name="value">8000</property>
+    <property name="step_increment">10</property>
     <property name="page_increment">10</property>
     <signal name="value-changed" handler="on_adj_lambda_value_changed" swapped="no"/>
   </object>
