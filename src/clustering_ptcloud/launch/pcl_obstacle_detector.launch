@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+ 	<param name="/use_sim_time" value="true" />
+  <node type="pcl_obstacle_detector" pkg="clustering_ptcloud" name="pcl_obstacle_detector" output="screen" />
+</launch>
