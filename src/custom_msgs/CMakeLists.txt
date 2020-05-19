@@ -44,6 +44,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
    DIRECTORY msg
+   FILES Object.msg DetectedObjects.msg
  )
 
 ## Generate services in the 'srv' folder
@@ -63,8 +64,9 @@ add_message_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
    DEPENDENCIES
-   std_msgs  
+   std_msgs
    sensor_msgs
+   geometry_msgs
  )
 
 ###################################
@@ -79,7 +81,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES test_py
-  CATKIN_DEPENDS rospy roscpp std_msgs sensor_msgs message_generation message_runtime 
+  CATKIN_DEPENDS rospy roscpp std_msgs sensor_msgs message_generation message_runtime
 #  DEPENDS system_lib
 )
 
