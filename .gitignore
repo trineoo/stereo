@@ -1,0 +1,13 @@
+# Images #
+*.bmp
+
+# GPS files #
+*.csv
+*.gpx
+
+# Compiled source #
+###################
+build/*
+devel/*
+logs/*
+*.o
