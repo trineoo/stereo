@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch the stereo_system project " -->
+<launch>
+  <arg name="simulate" default="true" />
+
+  <group if="$(arg simulate)">
+    <!-- bagfile -->
+    <node pkg="rosbag" type="play" name="player" output="screen" args="--clock /home/stereo/stereo_vision/Bagfiles/VerandaLina2804.bag"/>
+
+    <!-- Set fake time for the clustering -->
+    <param name="/use_sim_time" value="true" />
+  </group>
+  <group unless="$(arg simulate)">
+    <!-- camera driver -->
+    <include file="$(find spinnaker_sdk_camera_driver)/launch/acquisition.launch" />
+
+  </group>
+
+
+  <include file="$(find clustering_ptcloud)/launch/pcl_obstacle_detector.launch" />
+
+
+  <node ns="camera_array" name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc" output="screen"/>
+
+
+</launch>
+
+
+<!-- TODO fikse at bagfile ikke printer til screen. Test med kameraet. etc -->

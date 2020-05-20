@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launch the stereo_system project " -->
+<launch>
+
+  <!--Bagfile-->
+  <!-- either, litenBat, middelsBat or langtUnnaKai -->
+  <arg name="path" value="/home/stereo/stereo_vision/Bagfiles/Bratt0505/" />
+  <arg name="file" default="middelsBat" />
+
+
+    <!-- bagfile Set fake time for the clustering -->
+  <node pkg="rosbag" type="play" name="player" args="--clock $(arg path)$(arg file).bag"/>
+  <param name="/use_sim_time" value="true" />
+
+  <include file="$(find darknet_ros)/launch/yolo_v3.launch" />
+  <node ns="camera_array" name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc" output="screen"/>
+  <node name="clustering_cnn" pkg="clustering_cnn" type="clustering_cnn" output="screen"/>
+
+
+</launch>
