@@ -2,9 +2,9 @@
 
   <!-- <class name="stereo_image_proc/disparity" type="stereo_image_proc::DisparityNodelet" base_class_type="nodelet::Nodelet">
     <description>Nodelet to perform stereo processing on a pair of rectified image streams, producing disparity images</description>
-  </class> trine-->
+  </class> -->
 
-  <class name="stereo_image_proc/disparityStereoBM" type="stereo_image_proc::DisparityNodelet" base_class_type="nodelet::Nodelet">
+  <class name="stereo_image_proc/disparity_stereoBM" type="stereo_image_proc::DisparityNodelet" base_class_type="nodelet::Nodelet">
     <description>Nodelet to perform stereo processing on a pair of rectified image streams, producing disparity images</description>
   </class>
 

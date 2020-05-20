@@ -126,8 +126,8 @@ int main(int argc, char **argv)
   // NOTE: Using node name for the disparity nodelet because it is the only one using
   // dynamic_reconfigure so far, and this makes us backwards-compatible with cturtle.
   std::string disparity_name = ros::this_node::getName();
-  // trine manager.load(disparity_name, "stereo_image_proc/disparity", remappings, my_argv);
-  manager.load(disparity_name, "stereo_image_proc/disparityStereoBM", remappings, my_argv);
+  // manager.load(disparity_name, "stereo_image_proc/disparity", remappings, my_argv);
+  manager.load(disparity_name, "stereo_image_proc/disparity_stereoBM", remappings, my_argv);
 
   // PointCloud2 nodelet
   // Inputs: left/image_rect_color, left/camera_info, right/camera_info, disparity

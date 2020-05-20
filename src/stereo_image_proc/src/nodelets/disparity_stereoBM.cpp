@@ -24,13 +24,11 @@
 
 #include <stereo_image_proc/processor.h>
 
-//Trine:
 #include "opencv2/calib3d.hpp"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/imgcodecs.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/ximgproc.hpp"
-#include <iostream>
 #include <string>
 
 namespace stereo_image_proc {
@@ -59,10 +57,11 @@ class DisparityNodelet : public nodelet::Nodelet
   ros::Publisher pub_disparity_;
 
   // Dynamic reconfigure
+  // delete or add dynamic reconfigure
   boost::recursive_mutex config_mutex_;
-  typedef stereo_image_proc::DisparityConfig Config; //trine delete?
-  typedef dynamic_reconfigure::Server<Config> ReconfigureServer;  //trine delete?
-  boost::shared_ptr<ReconfigureServer> reconfigure_server_;  //trine delete?
+  typedef stereo_image_proc::DisparityConfig Config;
+  typedef dynamic_reconfigure::Server<Config> ReconfigureServer;
+  boost::shared_ptr<ReconfigureServer> reconfigure_server_;
 
   // Processing state (note: only safe because we're single-threaded!)
   image_geometry::StereoCameraModel model_;
@@ -110,9 +109,9 @@ void DisparityNodelet::onInit()
 
   // Set up dynamic reconfiguration
   //ReconfigureServer::CallbackType f = boost::bind(&DisparityNodelet::configCb,
-                      //                            this, _1, _2); //trine delete?
-  //reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh)); //trine delete?
-  //reconfigure_server_->setCallback(f);//trine delete?
+                      //                            this, _1, _2);
+  //reconfigure_server_.reset(new ReconfigureServer(config_mutex_, private_nh));
+  //reconfigure_server_->setCallback(f);
 
   // Monitor whether anyone is subscribed to the output
   ros::SubscriberStatusCallback connect_cb = boost::bind(&DisparityNodelet::connectCb, this);

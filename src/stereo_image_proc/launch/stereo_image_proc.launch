@@ -27,10 +27,10 @@
   <!-- Disparity image -->
   <!--<node pkg="nodelet" type="nodelet" name="disparity"
         args="load stereo_image_proc/disparity $(arg manager) $(arg bond)"
-	respawn="$(arg respawn)" /> trine-->
+	respawn="$(arg respawn)" /> -->
 
-  <node pkg="nodelet" type="nodelet" name="disparityStereoBM"
-        args="load stereo_image_proc/disparityStereoBM $(arg manager) $(arg bond)"
+  <node pkg="nodelet" type="nodelet" name="StereoBM"
+        args="load stereo_image_proc/disparity_stereoBM $(arg manager) $(arg bond)"
 	respawn="$(arg respawn)" />
 
   <!-- PointCloud2 -->
