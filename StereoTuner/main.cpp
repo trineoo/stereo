@@ -383,8 +383,8 @@ G_MODULE_EXPORT void on_btn_defaults_clicked(GtkButton *b, ChData *data) {
 
 int main(int argc, char *argv[]) {
 
-	char default_left_filename[] = "../leftRect3.bmp";
-	char default_right_filename[] = "../rightRect3.bmp";
+	char default_left_filename[] = "../right.bmp";
+	char default_right_filename[] = "../left.bmp";
 	char *left_filename = default_left_filename;
 	char *right_filename = default_right_filename;
 
