@@ -16,6 +16,8 @@
 #include <string>
 #include <thread>
 #include <vector>
+// basic file operations
+#include <fstream>
 
 // ROS
 #include <actionlib/server/simple_action_server.h>

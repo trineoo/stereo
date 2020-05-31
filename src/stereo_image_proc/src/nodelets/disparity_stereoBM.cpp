@@ -165,14 +165,14 @@ void DisparityNodelet::imageCb(const ImageConstPtr& l_image_msg,
   int top    = border;
   int bottom = disp_msg->image.height - 1 - border; */
 
-  int wsize=9;
-  int min_disp = 0;
-  int range_disp = 144;               //parameter of stereo matching
+  int wsize         = 35;             //9;        //blockSize
+  int min_disp      = 0;
+  int range_disp    = 160;        //144;      //num disp         //parameter of stereo matching
   bool no_downscale = true;       //force stereo matching on full-sized views to improve quality
-  double vis_mult = 1.0;           //coefficient used to scale disparity map visualizations
-  bool no_display = false;       // don't display results
-  double lambda = 8000.0;       //8000.0       parameter of wls post-filtering
-  double sigma  = 1.5;          //1.5, parameter of wls post-filtering
+  double vis_mult   = 1.0;      //Ikke endre     //coefficient used to scale disparity map visualizations
+  bool no_display   = false;       // don't display results
+  double lambda     = 2250;            //8000.0;       //8000.0       parameter of wls post-filtering
+  double sigma      = 0.3;              //1.5;          //1.5, parameter of wls post-filtering
   String filter="wls_conf";
 
   // Create cv::Mat views onto all buffers
