@@ -9,7 +9,7 @@ from std_msgs.msg import Header
 from datetime import datetime
 from math import sqrt, atan, sin, cos, pi, radians
 
-'''
+
 def lla2ned(lat_deg, long_deg, altitude, lat0_deg, long0_deg, altitude0):
     deg2rad = np.pi/180
     rad2deg = 180/np.pi
@@ -62,8 +62,8 @@ def lla2ned(lat_deg, long_deg, altitude, lat0_deg, long0_deg, altitude0):
 
     NED = [N, E, D]
     return NED
-'''
 
+'''
 def lla2ned(latitude, longitude, latitude_ref, longitude_ref):
 	R = 6378137.0#Earth radius, WGS84
 	f = 0.003352810664747#Flattening factor, WGS84
@@ -78,7 +78,7 @@ def lla2ned(latitude, longitude, latitude_ref, longitude_ref):
 	dE = d_long/(atan(1.0/(R_N*cos(radians(latitude_ref)))))
 
 	return [dN, dE, 0]
-
+'''
 
 def navCallback(data):
     ### Piren
@@ -86,17 +86,20 @@ def navCallback(data):
     long0_deg = 10.39908278
     altitude0 = 39.923
 
-    time = data.header.stamp
+    time = data.sat_time
+    #time = data.header.stamp
 
-    ntime = (time.nsecs)/ 1000000000
-    date_time = time.secs + ntime
+    #ntime = (time.nsecs)/ 1000000000
+    date_time = time.to_sec()
     date_time = datetime.fromtimestamp(date_time)
 
 
-    NED = lla2ned(data.latitude, data.longitude, lat0_deg, long0_deg)
+    NED = lla2ned(data.latitude, data.longitude, data.altitude, lat0_deg, long0_deg, altitude0)
+    #NED = [data.latitude, data.longitude]
+    #b = np.asarray([ [data.longitude, data.latitude, date_time, time.secs, time.nsecs] ])
     b = np.asarray([ [NED, date_time, time.secs, time.nsecs] ])
 
-    with open('milli_NED.csv','ab') as fd:
+    with open('milli_bag5.csv','ab') as fd:
         np.savetxt(fd, b, delimiter=",", fmt="%s")
 
 
@@ -109,7 +112,8 @@ def main():
     rospy.Subscriber("vectorVS330/fix", gnssGGA, navCallback)
 
     a = np.asarray([ ["N","E","D","time", "ros time sec", "ros time nsec"]])
-    with open('milli_NED.csv','ab') as fd:
+    #a = np.asarray([ ["X","Y"]])
+    with open('milli_bag5.csv','ab') as fd:
         np.savetxt(fd, a, delimiter=",", fmt="%s")
 
     # spin() simply keeps python from exiting until this node is stopped

@@ -5,9 +5,9 @@ import string
 import numpy as np
 from std_msgs.msg import String
 from math import sqrt, atan, sin, cos, pi, radians
+from datetime import datetime, timedelta
 
 
-'''
 def lla2ned(lat_deg, long_deg, altitude, lat0_deg, long0_deg, altitude0):
     deg2rad = np.pi/180
     rad2deg = 180/np.pi
@@ -60,9 +60,9 @@ def lla2ned(lat_deg, long_deg, altitude, lat0_deg, long0_deg, altitude0):
 
     NED = [N, E, D]
     return NED
+
+
 '''
-
-
 def lla2ned(latitude, longitude, latitude_ref, longitude_ref):
 	R = 6378137.0#Earth radius, WGS84
 	f = 0.003352810664747#Flattening factor, WGS84
@@ -77,30 +77,34 @@ def lla2ned(latitude, longitude, latitude_ref, longitude_ref):
 	dE = d_long/(atan(1.0/(R_N*cos(radians(latitude_ref)))))
 
 	return [dN, dE, 0]
-
+'''
 def main():
     ### Piren
     lat0_deg  = 63.4389029083
     long0_deg = 10.39908278
     altitude0 = 39.923
 
-    lla_points = np.loadtxt('MA_track_points.csv', delimiter=',', skiprows=1, dtype=String)
+    lla_points = np.loadtxt('track_points.csv', delimiter=',', skiprows=1, dtype=String)
 
     #lla_points = np.delete(lla_points, np.s_[2:6],1)
     #lla_points = np.delete(lla_points, np.s_[5:29],1)
 
     a = np.asarray([ ["N","E","D","time"]])
-    with open('testGPSData.csv','ab') as fd:
+    with open('GPS_pluss_4.csv','ab') as fd:
         np.savetxt(fd, a, delimiter=",", fmt="%s")
 
     for row in lla_points:
-        NED = lla2ned(float(row[1]), float(row[0]), lat0_deg, long0_deg)
+        NED = lla2ned(float(row[1]), float(row[0]), float(row[5]) ,lat0_deg, long0_deg, altitude0)
 
-        string = row[6]
-        new_time = string[0:12] + str(int(string[12]) + 2) + string[13:len(string)]
+        #string = row[6]
+        #new_time = string[0:11] + str(int(string[11:12]) + 2) + string[13:len(string)]
+        date_str = row[6]
+        date = datetime.strptime(date_str, '%Y/%m/%d %H:%M:%S+%f')
+        new_time = date + timedelta(hours=2) + timedelta(seconds=4)
+
         b = np.asarray([ [NED, new_time]])
 
-        with open('testGPSData.csv','ab') as fd:
+        with open('GPS_pluss_4.csv','ab') as fd:
             np.savetxt(fd, b, delimiter=",", fmt="%s")
 
 
