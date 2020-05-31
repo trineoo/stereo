@@ -51,10 +51,10 @@ struct ChData {
 	bool live_update;
 
 	/* Defalt values */
-	static const int DEFAULT_BLOCK_SIZE = 9;
-	static const int DEFAULT_NUM_DISPARITIES = 144;
-	static const int DEFAULT_LAMBDA = 8000;
-	static const float DEFAULT_SIGMA = 1.5;
+	static const int DEFAULT_BLOCK_SIZE = 35;
+	static const int DEFAULT_NUM_DISPARITIES = 160;
+	static const int DEFAULT_LAMBDA = 2250;
+	static const float DEFAULT_SIGMA = 0.3;
 	//static const int DEFAULT_MIN_DISPARITY = 0;
 
 	ChData() : matcher_type(BM), block_size(DEFAULT_BLOCK_SIZE), //min_disparity(DEFAULT_MIN_DISPARITY),

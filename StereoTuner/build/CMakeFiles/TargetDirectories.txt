@@ -1,3 +1,0 @@
-/home/stereo/STEREO_SYSTEM/StereoTuner/build/CMakeFiles/edit_cache.dir
-/home/stereo/STEREO_SYSTEM/StereoTuner/build/CMakeFiles/main.dir
-/home/stereo/STEREO_SYSTEM/StereoTuner/build/CMakeFiles/rebuild_cache.dir
