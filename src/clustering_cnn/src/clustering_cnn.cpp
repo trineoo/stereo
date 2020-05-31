@@ -1,4 +1,7 @@
-
+#include <boost/version.hpp>
+#if ((BOOST_VERSION / 100) % 1000) >= 53
+#include <boost/thread/lock_guard.hpp>
+#endif
 
 #include <ros/ros.h>
 #include <iostream>
@@ -7,6 +10,13 @@
 #include <opencv2/core/core.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
+#include <opencv2/imgcodecs.hpp>
+#include <opencv2/highgui.hpp>
+#include "opencv2/ximgproc.hpp"
+
+#include "opencv2/calib3d.hpp"
+#include "opencv2/imgproc.hpp"
+#include <string>
 
 #include "darknet_ros_msgs/BoundingBoxes.h"
 #include "darknet_ros_msgs/BoundingBox.h"
@@ -21,10 +31,16 @@
 #include <custom_msgs/DetectedObjects.h>
 #include <custom_msgs/Object.h>
 
+#include <fstream>
 
- using namespace message_filters;
+  char path1[70] = "/home/stereo/STEREO_SYSTEM/GPS/clusteringCNNDepth3New.csv";
 
- ros::Publisher detected_objects_pub;
+
+
+using namespace message_filters;
+
+ros::Publisher detected_objects_pub;
+
 
 
 float medianMat (cv::Mat image){
@@ -58,13 +74,21 @@ double constrainAngle(double x){
 
 
 void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_ros_msgs::BoundingBoxes::ConstPtr& objects, const sensor_msgs::CameraInfo::ConstPtr& l_cam_info, const sensor_msgs::CameraInfo::ConstPtr& r_cam_info){
+    std::ofstream myfile;
+    myfile.open(path1, std::ios::out | std::ios::app);
+
     custom_msgs::DetectedObjects detected_objects;
 
     image_geometry::StereoCameraModel model;
     model.fromCameraInfo(l_cam_info, r_cam_info);
 
     const sensor_msgs::Image& dimage = disp->image;
-    const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
+    cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
+    cv::Mat disp_u(dmat.size(), 0);
+    dmat.convertTo(disp_u, disp_u.type());
+    cv::normalize(disp_u, disp_u, 0, 255, cv::NORM_MINMAX );
+    applyColorMap(disp_u, disp_u, cv::COLORMAP_JET);
+
 
     for(int i = 0; i < objects->bounding_boxes.size() ; i++){
 
@@ -73,8 +97,6 @@ void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_r
       cv::Mat roi(dmat, cv::Rect(objects->bounding_boxes[i].xmin, objects->bounding_boxes[i].ymin, width, height));
 
       float med = medianMat(roi);
-      //float depth = (disp->f * disp->T)/med;
-
 
       float middle_x = objects->bounding_boxes[i].xmin + (width/2);
       float middle_y = objects->bounding_boxes[i].ymin + (height/2);
@@ -100,10 +122,19 @@ void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_r
       object.Class = objects->bounding_boxes[i].Class;
 
       detected_objects.objects.push_back(object);
+
+      float depth = sqrt(pow(coord.x,2)+pow(coord.z,2));
+
+      myfile << objects->header.stamp.sec <<","<< depth <<std::endl;
+
+      cv::Rect rect(objects->bounding_boxes[i].xmin, objects->bounding_boxes[i].ymin, width, height);
+      cv::rectangle(disp_u, rect, cv::Scalar(255, 255, 255),4);
     }
+    cv::imshow("Disparity view", disp_u);
+    cv::waitKey(30);
     detected_objects.header = objects->header;
     detected_objects_pub.publish(detected_objects);
-
+    myfile.close();
 }
 
 /*
@@ -138,13 +169,16 @@ void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_r
 
 
 int main(int argc, char** argv){
-  ros::init(argc, argv, "clustering_NN");
+  ros::init(argc, argv, "clustering_cnn");
   ros::NodeHandle nh;
+
+  std::ofstream myfile;
+  myfile.open(path1, std::ios::out);
+  myfile <<"time"<<","<< "depth" <<std::endl;
+
 
   detected_objects_pub = nh.advertise<custom_msgs::DetectedObjects>("detected_objects", 10);
 
-  //ros::Subscriber sub_objects = nh.subscribe("/darknet_ros/bounding_boxes", 1, objectsCallback);
-  //ros::Subscriber sub_disp = nh.subscribe("/camera_array/disparity", 1, dispCallback);
   message_filters::Subscriber<sensor_msgs::CameraInfo> l_camInfo_sub(nh, "/camera_array/left/camera_info", 1);
   message_filters::Subscriber<sensor_msgs::CameraInfo> r_camInfo_sub(nh, "/camera_array/right/camera_info", 1);
   message_filters::Subscriber<stereo_msgs::DisparityImage> disp_sub(nh, "/camera_array/disparity", 100);
@@ -153,11 +187,6 @@ int main(int argc, char** argv){
   //typedef sync_policies::ApproximateTime<stereo_msgs::DisparityImage,darknet_ros_msgs::BoundingBoxes> MySyncPolicy;
   //Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), disp_sub, objects_sub);
   sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4));
-
-
-
-
-  //sync.registerCallback(mask_detect_callback)
 
   ros::spin();
   return 0;
