@@ -1,5 +1,8 @@
 # Images #
 *.bmp
+YOLOimg/
+
+
 
 # Bagfiles #
 *.bag
@@ -7,11 +10,19 @@
 # GPS files #
 *.csv
 *.gpx
+GPS/
+
 
 
 # Compiled source #
 ###################
 build/*
+**/build
 devel/*
 logs/*
 *.o
+.catkin_tools/profiles/default/build.yaml
+.catkin_tools/profiles/default/packages/
+
+
+# Ignore img files #
