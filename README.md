@@ -23,11 +23,11 @@ Hello from two soon-to-be well educated grown-ups.
 * [CUDA 10.2](https://developer.nvidia.com/cuda-downloads) for runnning darknet ros (YOLOv3) on GPU.
 * [Python](https://www.python.org/downloads/). The scripts is tested with Python 2.7.12 
   1. [Matplotlib](https://matplotlib.org/users/installing.html) and [OpenCV](https://opencv.org/)
-```Bash
-  python -mpip install -U pip  #Installs Python pip
-  python -mpip install -U matplotlib #Plot the results by installing Matplotlib
-  python -mpip install -U opencv-python #Show animation by installing 
-```
+    ```bash
+    python -mpip install -U pip  #Installs Python pip
+    python -mpip install -U matplotlib #Plot the results by installing Matplotlib
+    python -mpip install -U opencv-python #Show animation by installing 
+    ```
 
 ## System overview
 Bilde av systemet/systemflow kommer :))
@@ -50,8 +50,10 @@ roslaunch launch clustering_ptcloud file:= "your bag file"  #launch bagfile, ste
   2. And rosbag include redirecting topics: `rosbag play "filename" /camera_array/cam0/image_raw:=/camera_array/left/image_raw /camera_array/cam1/image_raw:=/camera_array/right/image_raw /camera_array/cam0/camera_info:=/camera_array/left/camera_info /camera_array/cam1/camera_info:=/camera_array/right/camera_info --clock`
 #### Stereo image proc
 * `ROS_NAMESPACE=camera_array rosrun stereo_image_proc stereo_image_proc`
-##### display images
-* `rosrun image_view stereo_view stereo:=/camera_array image:=image_rect_color #rectified images and disparity map`
+##### Display images
+*   ```bash
+    rosrun image_view stereo_view stereo:=/camera_array image:=image_rect_color #rectified images and disparity map
+    ```
 * `rosrun image_view stereo_view stereo:=/camera_array image:=image_raw #raw images`
 * `rosrun image_view image_view image:=/camera_arr/left/image_rect_color  #left rectified image`
 #### Clustering
