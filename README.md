@@ -114,19 +114,44 @@ make
 ./main
 ```
 
+
+### Label YOLO images
+GUI for marking bounded boxes of objects in images for training Yolo v3. 
+
+* Put your `.jpg`-images to the directory `x64/Release/data/img`. 
+* Change numer of classes (objects for detection) in file `x64/Release/data/obj.data
+* Put names of objects, one for each line in file `x64/Release/data/obj.names
+If the images is used for training a custom dataset visit [AlexBA](https://github.com/AlexeyAB/Yolo_mark) for a more detailed explanation.  
+```bash
+cmake .
+make
+./linux_mark.sh
+```
+
+
 ### Precision-recall curve for YOLOv3
 Plot and calculate the precision-recall curve from ground thruth images. It iterates through two for-loops, one with IoU-threshold and the second with the YOLO-threshold. Make sure to input detection images from the network with threshold less than the ones in the for-loop in main.py. The mAP script is a modifed version of the code in the github repository [mAp](https://github.com/Cartucho/mAP). It outputs a precision-recall curve for each threshold and IoU-threshold in main.py
+
+* Create the ground truth files using [Label YOLO images](#Label-YOLO-images)
+  1. Insert images into the folder input/ground-truth/images 
+  2. Insert ground-truth files into ground-truth/
+  3. Add class list to the file scripts/extra/class_list.txt
+  4. Run the python script: python convert_gt_yolo.py to convert the txt-files to the correct format
+* Create the detection-results files by running darknet_ros
+  1. Copy the detection-results files into the folder input/detection-results/
+* Run the code: python main.py
+
+note: Be consistent with using rectifiec/not-rectified images. 
 ```bash
 python main.py
 ```
 Feel free to edit the main file with your preferred values in the for-loops. 
 
+<img src="/applications_scripts/precision-recall/scripts/extra/thresChange0.1.png"/>
+
 ### Plot and calculate ground truth depth and stereo depth
 Match handhold-GPS csv file with the GPS from MA by satellite time. Match the stereo ros-time and plot a beautiful graph. 
 
-
-### Label YOLO images
-Visit [AlexBA](https://github.com/AlexeyAB/Yolo_mark)
 
 
 ## Authors and License
