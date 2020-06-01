@@ -4,7 +4,7 @@ The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at N
 ## Contents
 * [Getting Started](#getting-started)
 * [System overviw](#system-overview)
-* [Run](#run)
+* [Launch](#launch)
 * [Connect to Network MilliAmpere](#connect-to-network-on-milliampere)
 * [Application and Scrips](application-and-scrips)
 * [Authors and License](#authors-and-license)
@@ -21,28 +21,24 @@ Hello from two soon-to-be well educated grown-ups.
 ### Installing
 * [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
 * [CUDA 10.2](https://developer.nvidia.com/cuda-downloads) for runnning darknet ros (YOLOv3) on GPU.
-
-### Launch
-```bash
-cd Master
-catkin build
-roslaunch launch clustering_cnn file:= "your bag file"  #launch bagfile, stereo_image_proc, yolo and clustering_cnn
-roslaunch launch clustering_ptcloud file:= "your bag file"  #launch bagfile, stereo_image_proc, clustering_ptcloud
+* [Python](https://www.python.org/downloads/). The scripts is tested with Python 2.7.12 
+  1. [Matplotlib](https://matplotlib.org/users/installing.html) and [OpenCV](https://opencv.org/)
+```Bash
+  python -mpip install -U pip  #Installs Python pip
+  python -mpip install -U matplotlib #Plot the results by installing Matplotlib
+  python -mpip install -U opencv-python #Show animation by installing 
 ```
-
-### Run 
-
 
 ## System overview
 Bilde av systemet/systemflow kommer :))
 
 
-## Run 
-
+## Launch 
 ```bash
 cd Master
 catkin build
-launch file ...
+roslaunch launch clustering_cnn file:= "your bag file"  #launch bagfile, stereo_image_proc, yolo and clustering_cnn
+roslaunch launch clustering_ptcloud file:= "your bag file"  #launch bagfile, stereo_image_proc, clustering_ptcloud
 ```
 
 ### Run individual packages
@@ -51,35 +47,19 @@ cd Master
 source devel/setup.bash
 ```
 #### Camera driver
-```bash
-roslaunch spinnaker_sdk_camera_driver acquisition.launch
-```
+* `roslaunch spinnaker_sdk_camera_driver acquisition.launch`
 
-Rosbag: 
-```bash
-rosbag play "filename" --clock
-```
-And rosbag include redirecting topics: 
-```bash
-rosbag play "filename" /camera_array/cam0/image_raw:=/camera_array/left/image_raw /camera_array/cam1/image_raw:=/camera_array/right/image_raw /camera_array/cam0/camera_info:=/camera_array/left/camera_info /camera_array/cam1/camera_info:=/camera_array/right/camera_info --clock
-```
-
+  1. Rosbag: `rosbag play "filename" --clock`
+  2. And rosbag include redirecting topics: `rosbag play "filename" /camera_array/cam0/image_raw:=/camera_array/left/image_raw /camera_array/cam1/image_raw:=/camera_array/right/image_raw /camera_array/cam0/camera_info:=/camera_array/left/camera_info /camera_array/cam1/camera_info:=/camera_array/right/camera_info --clock`
 
 #### Stereo image proc
-```bash
-ROS_NAMESPACE=camera_array rosrun stereo_image_proc stereo_image_proc
-```
-
+* `ROS_NAMESPACE=camera_array rosrun stereo_image_proc stereo_image_proc`
 ##### display images
-```bash
-rosrun image_view stereo_view stereo:=/camera_array image:=image_rect_color #rectified images and disparity map
-rosrun image_view stereo_view stereo:=/camera_array image:=image_raw #raw images
-rosrun image_view image_view image:=/camera_arr/left/image_rect_color  #left rectified image
-```
+* `rosrun image_view stereo_view stereo:=/camera_array image:=image_rect_color #rectified images and disparity map`
+* `rosrun image_view stereo_view stereo:=/camera_array image:=image_raw #raw images`
+* `rosrun image_view image_view image:=/camera_arr/left/image_rect_color  #left rectified image`
 #### Clustering
-```bash
-roslaunch clustering pcl_obstacle_detector.launch #Need the bagfile to be run with the "--clock"
-```
+* `roslaunch clustering pcl_obstacle_detector.launch #Need the bagfile to be run with the "--clock"`
 #### Darknet_ros (YOLOv3)
 ```bash
 roslaunch darknet_ros yolo_v3.launch  #subscribes on camera_array/left/image_rect_color
