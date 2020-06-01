@@ -1,9 +1,7 @@
 # Stereo Vision for Autonomous ferry - code
 The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at Norwegian University of Science and Technology. "Stereo Vision for Autonomous ferry" goes into detail of the calibration, the chosen stereo setup and the implementation for testing in dynamic scenes. The ownship has adequate data to sense, process and understand its surroundings.
 
-
 ## Contents
-
 * [Getting Started](#getting-started)
 * [System overviw](#system-overview)
 * [Run](#run)
@@ -13,7 +11,7 @@ The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at N
 
 
 ## Getting Started
-Hello 
+Hello from two soon-to-be well educated grown-ups.
 
 ### Prerequisites
  * Setup a computer with GPU and Ubuntu 16.04. This is tested on a Dell something something.
@@ -99,7 +97,8 @@ rostopic echo /topic #test that connection is established
 ```
 ## Application and Scrips
 ### stereoTuner
-Application for tuning the disaprity map. Using the stereoBM object and WLS filter from openCV. The GUI is based on 
+Application for tuning the disaprity map. Using the stereoBM object and WLS filter from openCV. The GUI is a modified version of the repository [stereo-tuner](https://github.com/guimeira/stereo-tuner). Remember to rectify the images in beforehand, you're welcome. 
+It is a simple little GTK application that can be used to tune parameters for the OpenCV Stereo Vision algorithms.
 
 ```bash
 mkdir build
@@ -110,7 +109,7 @@ make
 ```
 
 ### Precision-recall curve for YOLOv3
-Plot and calculate the precision-recall curve from ground thruth images. It iterates through two for-loops, one with IoU-threshold and the second with the YOLO-threshold. Make sure to input detection images from the network with threshold less than the ones in the for-loop in main.py. The mAP script is a modifed version of the code in the github repository [mAp](https://github.com/Cartucho/mAP). It outputs a precision-recall curve for for each threshold and IoU-threshold in main.py
+Plot and calculate the precision-recall curve from ground thruth images. It iterates through two for-loops, one with IoU-threshold and the second with the YOLO-threshold. Make sure to input detection images from the network with threshold less than the ones in the for-loop in main.py. The mAP script is a modifed version of the code in the github repository [mAp](https://github.com/Cartucho/mAP). It outputs a precision-recall curve for each threshold and IoU-threshold in main.py
 ```bash
 python main.py
 ```
@@ -118,6 +117,10 @@ Feel free to edit the main file with your preferred values in the for-loops.
 
 ### Plot and calculate ground truth depth and stereo depth
 Match handhold-GPS csv file with the GPS from MA by satellite time. Match the stereo ros-time and plot a beautiful graph. 
+
+
+### Label YOLO images
+Visit [AlexBA](https://github.com/AlexeyAB/Yolo_mark)
 
 
 ## Authors and License
