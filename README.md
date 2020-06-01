@@ -25,7 +25,7 @@ Hello from two soon-to-be well educated grown-ups.
 ### Launch
 ```bash
 cd Master
-catkin_make
+catkin build
 roslaunch launch clustering_cnn file:= "your bag file"  #launch bagfile, stereo_image_proc, yolo and clustering_cnn
 roslaunch launch clustering_ptcloud file:= "your bag file"  #launch bagfile, stereo_image_proc, clustering_ptcloud
 ```
@@ -41,7 +41,7 @@ Bilde av systemet/systemflow kommer :))
 
 ```bash
 cd Master
-catkin_make
+catkin build
 launch file ...
 ```
 
