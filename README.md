@@ -37,21 +37,17 @@ Bilde av systemet/systemflow kommer :))
 ```bash
 cd Master
 catkin build
+source devel/setup.bash
 roslaunch launch clustering_cnn file:= "your bag file"  #launch bagfile, stereo_image_proc, yolo and clustering_cnn
 roslaunch launch clustering_ptcloud file:= "your bag file"  #launch bagfile, stereo_image_proc, clustering_ptcloud
 ```
 
 ### Run individual packages
-```bash
-cd Master
-source devel/setup.bash
-```
+
 #### Camera driver
 * `roslaunch spinnaker_sdk_camera_driver acquisition.launch`
-
   1. Rosbag: `rosbag play "filename" --clock`
   2. And rosbag include redirecting topics: `rosbag play "filename" /camera_array/cam0/image_raw:=/camera_array/left/image_raw /camera_array/cam1/image_raw:=/camera_array/right/image_raw /camera_array/cam0/camera_info:=/camera_array/left/camera_info /camera_array/cam1/camera_info:=/camera_array/right/camera_info --clock`
-
 #### Stereo image proc
 * `ROS_NAMESPACE=camera_array rosrun stereo_image_proc stereo_image_proc`
 ##### display images
@@ -93,7 +89,6 @@ cmake ..
 make
 ./main
 ```
-
 
 ### Label YOLO images
 GUI for marking bounded boxes of objects in images for training Yolo v3. 
