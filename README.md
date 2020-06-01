@@ -16,13 +16,19 @@ Hello from two soon-to-be well educated grown-ups.
 ### Prerequisites
  * Setup a computer with GPU and Ubuntu 16.04. This is tested on a Dell something something.
  * Install Spinnaker and verify that you can run your cameras with SpinViw (prefer Windows operating system). Setup a stereo system with either hardware og software triggering. Modify the yaml files in spinnaked-sdk-driver replacing the cam-ids and master cam serial number to match your camera's serial number. Also include the calibration parameters in.... This repo is tested with [Blackfly S GigE](https://www.flir.com/products/blackfly-s-gige/?model=BFS-PGE-50S5C-C), using PoE, master software triggering and GPIO pins for external triggering the slave. 
- * [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
- * Install [CUDA 10.2](https://developer.nvidia.com/cuda-downloads) for runnning darknet ros (YOLOv3) on GPU. 
  * Optionally: Set up the  [LiDAR driver](http://wiki.ros.org/velodyne/Tutorials/Getting%20Started%20with%20the%20Velodyne%20VLP16). The LiDAR needs to be calibrated agaisnt the stereo camera to be used as a Ground Truth or as basis for comparison. The code is tested using [Velodyne LiDAR Puck-16](http://www.isaza.co/VELODYNE/63-9243%20Rev%20B%20User%20Manual%20and%20Programming%20Guide,VLP-16.pdf)
 
 ### Installing
+* [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
+* [CUDA 10.2](https://developer.nvidia.com/cuda-downloads) for runnning darknet ros (YOLOv3) on GPU.
 
-### Building
+### Launch
+```bash
+cd Master
+catkin_make
+roslaunch launch clustering_cnn file:= "your bag file"  #launch bagfile, stereo_image_proc, yolo and clustering_cnn
+roslaunch launch clustering_ptcloud file:= "your bag file"  #launch bagfile, stereo_image_proc, clustering_ptcloud
+```
 
 ### Run 
 
