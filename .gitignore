@@ -1,9 +1,13 @@
 # Images #
 *.bmp
 
+# Bagfiles #
+*.bag
+
 # GPS files #
 *.csv
 *.gpx
+
 
 # Compiled source #
 ###################
