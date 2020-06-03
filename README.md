@@ -28,6 +28,8 @@ Hello from two soon-to-be well educated grown-ups.
     python -mpip install -U matplotlib #Plot the results by installing Matplotlib
     python -mpip install -U opencv-python #Show animation by installing 
     ```
+ * For the stereoTuner the gtk3 development files is needed for cmake: 
+   `sudo apt-get install build-essential libgtk-3-dev`
 
 ## System overview
 Bilde av systemet/systemflow kommer :))
