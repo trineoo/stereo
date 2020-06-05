@@ -30,10 +30,16 @@
 #include <geometry_msgs/Point.h>
 #include <custom_msgs/DetectedObjects.h>
 #include <custom_msgs/Object.h>
+#include <custom_msgs/NorthEastHeading.h>
+#include <custom_msgs/gnssGGA.h>
+
+#include <custom_libraries/convert_to_NED.hpp>
 
 #include <fstream>
 
-  char path1[70] = "/home/stereo/STEREO_SYSTEM/GPS/clusteringCNNDepth3New.csv";
+char path1[70] = "/home/stereo/STEREO_SYSTEM/GPS/clusteringCNNDepthNED.csv";
+
+double heading_MA;
 
 
 
@@ -73,11 +79,22 @@ double constrainAngle(double x){
 }
 
 
-void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_ros_msgs::BoundingBoxes::ConstPtr& objects, const sensor_msgs::CameraInfo::ConstPtr& l_cam_info, const sensor_msgs::CameraInfo::ConstPtr& r_cam_info){
-    std::ofstream myfile;
-    myfile.open(path1, std::ios::out | std::ios::app);
+void headingCallback(const custom_msgs::NorthEastHeading::ConstPtr& heading){
+  heading_MA = heading->heading;
 
+}
+
+
+void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_ros_msgs::BoundingBoxes::ConstPtr& objects, const sensor_msgs::CameraInfo::ConstPtr& l_cam_info, const sensor_msgs::CameraInfo::ConstPtr& r_cam_info, const custom_msgs::gnssGGA::ConstPtr& pos){
+    //std::ofstream myfile;
+    //myfile.open(path1, std::ios::out | std::ios::app);
     custom_msgs::DetectedObjects detected_objects;
+
+    // NED frame Piren
+    double lat0_deg  = 63.4389029083;
+    double long0_deg = 10.39908278;
+    double altitude0 = 39.923;
+    std::vector<double> position_MA = lla2ned(pos->latitude, pos->longitude, pos->altitude, lat0_deg, long0_deg, altitude0);
 
     image_geometry::StereoCameraModel model;
     model.fromCameraInfo(l_cam_info, r_cam_info);
@@ -116,65 +133,39 @@ void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_r
 
       float obj_width = (xmax_xyz.x/1000) - (xmin_xyz.x/1000);
 
+      std::vector<double> obj_NED = objectCoord2NED(coord.x, coord.y, coord.z, position_MA[0], position_MA[1], position_MA[2], heading_MA);
+
       custom_msgs::Object object;
-      object.coord = coord;
+      object.north = obj_NED[0];
+      object.east  = obj_NED[1];
+      object.down  = obj_NED[2];
       object.width = obj_width;
       object.Class = objects->bounding_boxes[i].Class;
 
+
+      //float depth = sqrt(pow(obj_NED[0]-position_MA[0],2)+pow(obj_NED[1]-position_MA[1],2));
+      //float depth1 = sqrt(pow(coord.x,2)+pow(coord.z,2));
+      //myfile << objects->header.stamp.sec <<","<<coord_NED.x<<","<<coord_NED.y <<","<<heading_MA<<std::endl;
+      //myfile << objects->header.stamp.sec <<","<<depth<<","<<depth1 <<std::endl;
       detected_objects.objects.push_back(object);
 
-      float depth = sqrt(pow(coord.x,2)+pow(coord.z,2));
-
-      myfile << objects->header.stamp.sec <<","<< depth <<std::endl;
-
-      cv::Rect rect(objects->bounding_boxes[i].xmin, objects->bounding_boxes[i].ymin, width, height);
-      cv::rectangle(disp_u, rect, cv::Scalar(255, 255, 255),4);
     }
-    cv::imshow("Disparity view", disp_u);
-    cv::waitKey(30);
     detected_objects.header = objects->header;
     detected_objects_pub.publish(detected_objects);
-    myfile.close();
+  //  myfile.close();
 }
 
-/*
-void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_ros_msgs::BoundingBoxes::ConstPtr& objects){
-    //BoundingBox[] boxes = objects->bounding_boxes;
-    const sensor_msgs::Image& dimage = disp->image;
-    const cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
-    //cv::Mat disparityMap;
-    //cv::resize(dmat, disparityMap, cv::Size(608,608));
-
-    //imwrite("disp22.bmp", dmat);
-    //std::cout<<"height: "<<
-
-    //cv::Mat image = cv::Mat::zeros(608, 608, CV_32F);
-    cv::Mat image = cv::Mat::zeros(disp->image.height, disp->image.width, CV_32F);
-
-    //const cv::Mat_<uint8_t> disparityMap = cv_bridge::toCvShare(disp, sensor_msgs::image_encodings::MONO8)->image;
-
-
-    for(int i = 0; i < objects->bounding_boxes.size() ; i++){
-      std::cout<<"xmin: "<< objects->bounding_boxes[i].xmin <<" xmax: "<< objects->bounding_boxes[i].xmax <<std::endl;
-      std::cout<<"ymin: "<< objects->bounding_boxes[i].ymin <<" ymax: "<< objects->bounding_boxes[i].ymax <<std::endl;
-
-      for (int r = objects->bounding_boxes[i].xmin ; r < objects->bounding_boxes[i].xmax ; r++ ){
-        for (int c = objects->bounding_boxes[i].ymin ; c < objects->bounding_boxes[i].ymax ; c++ ){
-          image.at<float>(c,r) = 200;
-        }
-      }
-    }
-    imwrite("disp.bmp", image);
-}*/
 
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "clustering_cnn");
   ros::NodeHandle nh;
 
-  std::ofstream myfile;
-  myfile.open(path1, std::ios::out);
-  myfile <<"time"<<","<< "depth" <<std::endl;
+  heading_MA = 0;
+
+  //std::ofstream myfile;
+  //myfile.open(path1, std::ios::out);
+  //myfile <<"time"<<","<< "depth" <<std::endl;
 
 
   detected_objects_pub = nh.advertise<custom_msgs::DetectedObjects>("detected_objects", 10);
@@ -183,10 +174,13 @@ int main(int argc, char** argv){
   message_filters::Subscriber<sensor_msgs::CameraInfo> r_camInfo_sub(nh, "/camera_array/right/camera_info", 1);
   message_filters::Subscriber<stereo_msgs::DisparityImage> disp_sub(nh, "/camera_array/disparity", 100);
   message_filters::Subscriber<darknet_ros_msgs::BoundingBoxes> objects_sub(nh, "/darknet_ros/bounding_boxes", 1);
-  TimeSynchronizer<stereo_msgs::DisparityImage,darknet_ros_msgs::BoundingBoxes, sensor_msgs::CameraInfo,sensor_msgs::CameraInfo> sync(disp_sub, objects_sub, l_camInfo_sub, r_camInfo_sub, 10);
-  //typedef sync_policies::ApproximateTime<stereo_msgs::DisparityImage,darknet_ros_msgs::BoundingBoxes> MySyncPolicy;
-  //Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), disp_sub, objects_sub);
-  sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4));
+  message_filters::Subscriber<custom_msgs::gnssGGA> position_sub(nh, "/vectorVS330/fix", 1);
+  //TimeSynchronizer<stereo_msgs::DisparityImage,darknet_ros_msgs::BoundingBoxes, sensor_msgs::CameraInfo,sensor_msgs::CameraInfo, custom_msgs::gnssGGA> sync(disp_sub, objects_sub, l_camInfo_sub, r_camInfo_sub, position_sub, 10);
+  typedef sync_policies::ApproximateTime<stereo_msgs::DisparityImage,darknet_ros_msgs::BoundingBoxes, sensor_msgs::CameraInfo,sensor_msgs::CameraInfo, custom_msgs::gnssGGA> MySyncPolicy;
+  Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), disp_sub, objects_sub, l_camInfo_sub, r_camInfo_sub, position_sub);
+  sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4, _5));
+
+  ros::Subscriber heading_sub = nh.subscribe("/navigation/eta", 1000, headingCallback);
 
   ros::spin();
   return 0;

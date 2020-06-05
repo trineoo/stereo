@@ -1,0 +1,40 @@
+ravnkloa:
+    name: "ravnkloa"
+    description: "NED frame located in the middle of the channel at Ravnkloa"
+    lla: [63.43458062305305, 10.392864117336558, 39.923]
+
+gjestebrygge:
+    name: "gjestebrygge"
+    description: "NED frame located at milliAmperes spot at Fosenkaia"
+    lla: [63.435729735, 10.3984801217, 39.923]
+
+piren:
+    name: "piren"
+    description: "NED frame located at milliAmperes spot at Piren"
+    lla: [63.4389029083, 10.39908278, 39.923]
+
+smedasundet:
+    name: "smedasundet"
+    description: "NED frame located at milliAmperes spot at Smedasundet in Haugensund"
+    lla: [59.4098410133, 5.27070759, -40.508]
+
+gps_antenna:
+    name: "gps_antenna"
+    description: "BODY frame located at the master (STB) gps antenna at milliAmpere"
+
+vessel_center:
+    name: "vessel_center"
+    description: "BODY frame marking the vessel center. Marked by a black cross at the main hatch"
+    parent_frame: "gps_antenna"
+    static_transform:
+        translation: [0,-0.975, 2.33]
+        rotation: [0, 0, 0]
+
+
+camera:
+  name: "camera_frame"
+  decription: "BODY frame of stereo camera"
+  parent_frame: "gps_antenna"
+  static_transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]

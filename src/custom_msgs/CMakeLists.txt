@@ -44,7 +44,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate messages in the 'msg' folder
 add_message_files(
    DIRECTORY msg
-   FILES Object.msg DetectedObjects.msg
+   FILES Object.msg DetectedObjects.msg gnssGGA.msg NorthEastHeading.msg gnssGGA_status.msg
  )
 
 ## Generate services in the 'srv' folder
