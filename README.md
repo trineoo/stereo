@@ -11,7 +11,7 @@ The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at N
 
 
 ## Getting Started
-Hello from two soon-to-be well educated grown-ups.
+
 
 ### Prerequisites
  * Setup a computer with GPU and Ubuntu 16.04. This is tested on a Dell something something.
@@ -104,6 +104,8 @@ make
 ./linux_mark.sh
 ```
 
+<img src="/applications_scripts/stereoTuner/illustration.png"/>
+
 ### Precision-recall curve for YOLOv3
 Plot and calculate the precision-recall curve from ground thruth images. It iterates through two for-loops, one with IoU-threshold and the second with the YOLO-threshold. Make sure to input detection images from the network with threshold less than the ones in the for-loop in main.py. The mAP script is a modifed version of the code in the github repository [mAp](https://github.com/Cartucho/mAP). It outputs a precision-recall curve for each threshold and IoU-threshold in main.py
 
@@ -133,7 +135,7 @@ Match handhold-GPS csv file with the GPS from MA by satellite time. Match the st
 
 
 ## Authors and License
-
+Good-luck from two soon-to-be well educated grown-ups.
 * **Trine Ødegård Olsen** - [trineoo](https://github.com/trineoo)
 * **Lina Theimann** - [Linact](https://github.com/linact)
 
