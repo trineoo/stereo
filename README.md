@@ -58,10 +58,16 @@ Bilde av systemet/systemflow kommer :))
     2. `rosrun image_view stereo_view stereo:=/camera_array image:=image_raw`
 * Left rectified image
     3. `rosrun image_view image_view image:=/camera_arr/left/image_rect_color`
-#### Clustering
+#### Clustering Point Cloud
 * `roslaunch clustering pcl_obstacle_detector.launch #Need the bagfile to be run with the "--clock"`
+* Tuning the parameters: `rosrun rqt_reconfigure rqt_reconfigure`
+* Visualize in rviz: `rosrun rviz rviz -f velodyne`
 #### Darknet_ros (YOLOv3)
 * `roslaunch darknet_ros yolo_v3.launch  #subscribes on camera_array/left/image_rect_color`
+#### Clustering Convolutional Neural Network
+* `rosrun clustering_cnn clustering_cnn`
+#### Navigation data
+* `rosrun navigation_data *filename*`
 
 ## Connect to Network on MilliAmpere
 If the code is to be run with the master core on the ferry Milliampere a local network need to be setup. The best solution is to set up a separate static network on the computer through usb3. 
