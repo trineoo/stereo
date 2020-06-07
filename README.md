@@ -11,7 +11,7 @@ The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at N
 
 
 ## Getting Started
-Hello from two soon-to-be well educated grown-ups.
+
 
 ### Prerequisites
  * Setup a computer with GPU and Ubuntu 16.04. This is tested on a Dell something something.
@@ -58,10 +58,16 @@ Bilde av systemet/systemflow kommer :))
     2. `rosrun image_view stereo_view stereo:=/camera_array image:=image_raw`
 * Left rectified image
     3. `rosrun image_view image_view image:=/camera_arr/left/image_rect_color`
-#### Clustering
+#### Clustering Point Cloud
 * `roslaunch clustering pcl_obstacle_detector.launch #Need the bagfile to be run with the "--clock"`
+* Tuning the parameters: `rosrun rqt_reconfigure rqt_reconfigure`
+* Visualize in rviz: `rosrun rviz rviz -f velodyne`
 #### Darknet_ros (YOLOv3)
 * `roslaunch darknet_ros yolo_v3.launch  #subscribes on camera_array/left/image_rect_color`
+#### Clustering Convolutional Neural Network
+* `rosrun clustering_cnn clustering_cnn`
+#### Navigation data
+* `rosrun navigation_data *filename*`
 
 ## Connect to Network on MilliAmpere
 If the code is to be run with the master core on the ferry Milliampere a local network need to be setup. The best solution is to set up a separate static network on the computer through usb3. 
@@ -104,6 +110,8 @@ make
 ./linux_mark.sh
 ```
 
+<img src="/applications_scripts/stereoTuner/illustration.png"/>
+
 ### Precision-recall curve for YOLOv3
 Plot and calculate the precision-recall curve from ground thruth images. It iterates through two for-loops, one with IoU-threshold and the second with the YOLO-threshold. Make sure to input detection images from the network with threshold less than the ones in the for-loop in main.py. The mAP script is a modifed version of the code in the github repository [mAp](https://github.com/Cartucho/mAP). It outputs a precision-recall curve for each threshold and IoU-threshold in main.py
 
@@ -133,7 +141,7 @@ Match handhold-GPS csv file with the GPS from MA by satellite time. Match the st
 
 
 ## Authors and License
-
+Good-luck from two soon-to-be well educated grown-ups.
 * **Trine Ødegård Olsen** - [trineoo](https://github.com/trineoo)
 * **Lina Theimann** - [Linact](https://github.com/linact)
 
