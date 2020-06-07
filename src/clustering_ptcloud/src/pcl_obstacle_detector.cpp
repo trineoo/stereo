@@ -1,20 +1,15 @@
 #include <ros/ros.h>
 
-#include <tf/tf.h>
-#include <tf2_ros/transform_listener.h>
-
+#include <dynamic_reconfigure/server.h>
+#include <clustering_ptcloud/pclseg_reConfig.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
-#include <pcl/common/centroid.h>
 #include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
+#include <pcl/filters/passthrough.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/conditional_removal.h>
-#include <pcl/filters/radius_outlier_removal.h>
-#include <pcl/search/kdtree.h>
+#include <pcl/point_cloud.h>
 #include <pcl/segmentation/extract_clusters.h>
-#include <geometry_msgs/TransformStamped.h>
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 typedef pcl::CentroidPoint<pcl::PointXYZ> CentroidPoint;
@@ -24,142 +19,118 @@ public:
     PclObstacleDetector(const ros::NodeHandle &nh);
     void cloudcb(const PointCloud::ConstPtr &msg); //endre msg
 private:
-
     // --- Parameters ---
-    // Reducer
-    double min_z;
-    double max_z;
-    double local_min_z;
-    double local_max_z;
-    double local_radius;
 
-    // Segmenter
-    double voxel_width;
-    double voxel_height;
-    double seg_cluster_tolerance;
-    int min_cluster_points;
-    int max_cluster_points;
+    /*** Crop ***/
+    double crop_min_z;
+    double crop_max_z;
 
-    // Accumulator
+    /*** sor: Statistical Outlier Removal ***/
+    int meanK; /* The number of nearest neighbors to use for mean distance estimation. */
+    double stddevMul; /* The standard deviation multiplier for the distance threshold calculation. */
+
+    /*** vg: Voxel Grid, leaf size ***/
+    float lx;
+    float ly;
+    float lz;
+
+    /*** Accumulator ***/
     int buffer_size;
 
-    // Clusterer
-    double search_radius;
-    int min_neighbors_in_radius;
-    int min_points;
-    int max_points;
-    double clu_cluster_tolerance;
-    bool centroid_mode;
-    // --- End Parameters ---
+    /*** Cluster ***/
+    double cluster_tolerance; /* The spatial cluster tolerance as a measure in the L2 Euclidean space */
+    int cluster_min_points;    /* The minimum number of points that a cluster needs to contain in order to be considered valid */
+    int cluster_max_points;    /* The maximum number of points that a cluster needs to contain in order to be considered valid*/
 
-    bool long_distance;
-    float discard_distance;
-    int it_count;
 
     // --- PointCloud Manipulators ---
-    PointCloud::ConstPtr reduce_cloud(const PointCloud::ConstPtr &cloud_input);
-    PointCloud::Ptr segment_cloud(const PointCloud::ConstPtr &cloud_input);
+    PointCloud::ConstPtr cut_cloud(const PointCloud::ConstPtr &cloud_input);
+    PointCloud::ConstPtr sor_cloud(const PointCloud::ConstPtr &cloud_input);
+    PointCloud::ConstPtr vg_cloud(const PointCloud::ConstPtr &cloud_input);
     PointCloud::Ptr accumulate_cloud(const PointCloud::ConstPtr &cloud_input);
     PointCloud::Ptr cluster_cloud(const PointCloud::ConstPtr &cloud_input);
+
+    void configCallback(clustering_ptcloud::pclseg_reConfig &config, uint32_t level);
+    dynamic_reconfigure::Server<clustering_ptcloud::pclseg_reConfig> dr_srv_;
 
     std::vector<PointCloud::Ptr> pcl_vector;
 
     // ROS
     ros::NodeHandle nh;
     ros::Subscriber sub;
-    ros::Publisher pub_reduced;
-    ros::Publisher pub_segmented;
+    ros::Publisher pub_cut;
+    ros::Publisher pub_sor;
+    ros::Publisher pub_vg;
     ros::Publisher pub_acc;
-    ros::Publisher pub_obstacles;
+    ros::Publisher pub_cluster;
 };
 
-PointCloud::ConstPtr
-PclObstacleDetector::reduce_cloud(const PointCloud::ConstPtr &cloud_input){
 
-    PointCloud::Ptr cloud_filtered_a (new PointCloud);
-    cloud_filtered_a->header = cloud_input->header;
+/***
+** PassThrough filter
+** simple filtering along a specified dimension
+** cut off values that are either inside or outside a given user range.
+***/
+PointCloud::ConstPtr PclObstacleDetector::cut_cloud(const PointCloud::ConstPtr &cloud_input){
+    PointCloud::Ptr cloud_filtered (new PointCloud);
+    cloud_filtered->header = cloud_input->header;
+    pcl::PassThrough<pcl::PointXYZ> pass;
+    pass.setInputCloud (cloud_input);
+    pass.setFilterFieldName ("z");
+    pass.setFilterLimits (crop_min_z, crop_max_z);
+    pass.filter (*cloud_filtered);
 
-    pcl::PointIndices::Ptr cloud_discard(new pcl::PointIndices());
-    pcl::ExtractIndices<pcl::PointXYZ> extract;
-    for (int i = 0; i < (*cloud_input).size(); i++)
-    {
-        pcl::PointXYZ pt = cloud_input->points[i];
-
-        if (pt.z < 0) {
-          cloud_discard->indices.push_back(i);
-        } else if (-pt.x > max_z || -pt.x < min_z) {
-          cloud_discard->indices.push_back(i);
-        } else {
-          double dist = sqrt(pow(pt.z,2) + pow(pt.y,2));
-          if (dist < local_radius) {
-            cloud_discard->indices.push_back(i);
-          }
-        }
-
-    }
-
-    extract.setInputCloud(cloud_input);
-    extract.setIndices(cloud_discard);
-    extract.setNegative(true);
-    extract.setKeepOrganized(true);
-    extract.filter(*cloud_filtered_a);
-
-    pub_reduced.publish(cloud_filtered_a);
-
-    const PointCloud::ConstPtr cloud_filtered_a_const = cloud_filtered_a;
-    return cloud_filtered_a_const;
+    pub_cut.publish(cloud_filtered);
+    const PointCloud::ConstPtr cloud_filtered_const = cloud_filtered;
+    return cloud_filtered_const;
 }
 
-PointCloud::Ptr
-PclObstacleDetector::segment_cloud(const PointCloud::ConstPtr &cloud_input){
-    PointCloud::Ptr cloud_downsampled(new PointCloud);
-    cloud_downsampled->header = cloud_input->header;
+/***
+** Statistical Outlier Removal
+** Remove noisy measurements, e.g. outliers,
+** from a point cloud dataset using statistical analysis techniques.
+***/
+PointCloud::ConstPtr PclObstacleDetector::sor_cloud(const PointCloud::ConstPtr &cloud_input){
+    PointCloud::Ptr cloud_filtered (new PointCloud);
+    cloud_filtered->header = cloud_input->header;
+
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud (cloud_input);
+    sor.setMeanK (meanK);
+    sor.setStddevMulThresh (stddevMul);
+    sor.filter (*cloud_filtered);
+
+    pub_sor.publish(cloud_filtered);
+    const PointCloud::ConstPtr cloud_filtered_const = cloud_filtered;
+    return cloud_filtered_const;
+
+}
+
+/***
+** Voxel Grid
+** Downsample the point cloud using a voxelized grid approach
+***/
+PointCloud::ConstPtr PclObstacleDetector::vg_cloud(const PointCloud::ConstPtr &cloud_input){
+    PointCloud::Ptr cloud_filtered (new PointCloud);
+    cloud_filtered->header = cloud_input->header;
 
     pcl::VoxelGrid<pcl::PointXYZ> sor;
-    sor.setInputCloud(cloud_input);
-    sor.setLeafSize(this->voxel_width, this->voxel_width, this->voxel_height);
-    sor.filter(*cloud_downsampled);
+    sor.setInputCloud (cloud_input);
+    sor.setLeafSize (lx, ly, lz);
+    sor.filter (*cloud_filtered);
 
+    pub_vg.publish(cloud_filtered);
+    const PointCloud::ConstPtr cloud_filtered_const = cloud_filtered;
+    return cloud_filtered_const;
 
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-    tree->setInputCloud(cloud_input);
-
-    pcl::EuclideanClusterExtraction<pcl::PointXYZ> euclid;
-    euclid.setClusterTolerance(this->seg_cluster_tolerance);
-    euclid.setMinClusterSize(this->min_cluster_points);
-    euclid.setMaxClusterSize(this->max_cluster_points);
-    euclid.setSearchMethod(tree);
-    euclid.setInputCloud(cloud_downsampled);
-
-    std::vector<pcl::PointIndices> indices;
-    euclid.extract(indices);
-    PointCloud::Ptr cloud_output(new PointCloud);
-    (*cloud_output).header = cloud_input->header;
-
-    for (auto &i: indices) {
-        CentroidPoint centroid;
-        for (auto &j: i.indices) {
-            centroid.add(cloud_downsampled->points[j]);
-        }
-        pcl::PointXYZ p;
-        centroid.get(p);
-	double dist = sqrt(pow(p.z,2) + pow(p.y,2));
-	//if ((long_distance && dist > discard_distance) || !long_distance ){
-	  (*cloud_output).points.push_back(p);
-	//}
-    }
-
-    (*cloud_output).width = (*cloud_output).points.size();
-    (*cloud_output).height = 1;
-    (*cloud_output).is_dense = true;
-
-    pub_segmented.publish(cloud_output);
-    return cloud_output;
 }
 
-
-PointCloud::Ptr
-PclObstacleDetector::accumulate_cloud(const PointCloud::ConstPtr &cloud_input){
+/***
+** Accumulate  point clouds
+** For increasing the 3D information, forming a point cloud
+** representative of the the perceived environment
+***/
+PointCloud::Ptr PclObstacleDetector::accumulate_cloud(const PointCloud::ConstPtr &cloud_input){
     PointCloud::Ptr new_cloud(new PointCloud);
     (*new_cloud).header = cloud_input->header;
     while (pcl_vector.size() >= buffer_size) {
@@ -178,8 +149,7 @@ PclObstacleDetector::accumulate_cloud(const PointCloud::ConstPtr &cloud_input){
             *merged_cloud += *cloud;
         }
 
-        merged_cloud->header.frame_id = "OPAL";
-        std::cout << "accumulated: " << pcl_vector.size() << std::endl;
+        merged_cloud->header.frame_id = "/velodyne";
         pub_acc.publish(merged_cloud);
         return merged_cloud;
     }else{
@@ -188,98 +158,110 @@ PclObstacleDetector::accumulate_cloud(const PointCloud::ConstPtr &cloud_input){
     }
 }
 
-PointCloud::Ptr
-PclObstacleDetector::cluster_cloud(const PointCloud::ConstPtr &cloud_input){
-    PointCloud::Ptr inliers(new PointCloud);
-    inliers->header = cloud_input->header;
-    pcl::RadiusOutlierRemoval<pcl::PointXYZ> rom;
-    rom.setInputCloud(cloud_input);
-    rom.setRadiusSearch(this->search_radius);
-    rom.setMinNeighborsInRadius(this->min_neighbors_in_radius);
-    rom.filter(*inliers);
+
+/***
+** Euclidean Cluster Extraction
+** represents a segmentation class for cluster extraction
+** in an Euclidean sense, depending on pcl::gpu::octree
+***/
+PointCloud::Ptr PclObstacleDetector::cluster_cloud(const PointCloud::ConstPtr &cloud_input){
+
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-    tree->setInputCloud(inliers);
+    tree->setInputCloud(cloud_input);
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> euclid;
-    euclid.setClusterTolerance(this->clu_cluster_tolerance);
-    euclid.setMinClusterSize(this->min_points);
-    euclid.setMaxClusterSize(this->max_points);
+    euclid.setClusterTolerance(this->cluster_tolerance);
+    euclid.setMinClusterSize(this->cluster_min_points);
+    euclid.setMaxClusterSize(this->cluster_max_points);
     euclid.setSearchMethod(tree);
-    euclid.setInputCloud(inliers);
+    euclid.setInputCloud(cloud_input);
 
     std::vector<pcl::PointIndices> indices;
     euclid.extract(indices);
 
     PointCloud::Ptr centroid_cloud(new PointCloud);
-    centroid_cloud->header = inliers->header;
+    centroid_cloud->header = cloud_input->header;
     for (auto &i: indices) {
       CentroidPoint centroid;
       for (auto &j: i.indices) {
-        centroid.add(inliers->points[j]);
+        centroid.add(cloud_input->points[j]);
       }
       pcl::PointXYZ p;
       centroid.get(p);
       centroid_cloud->points.push_back(p);
     }
-    pub_obstacles.publish(centroid_cloud);
+    pub_cluster.publish(centroid_cloud);
     return centroid_cloud;
 }
 
-void
-PclObstacleDetector::cloudcb(const PointCloud::ConstPtr &cloud_input)
+
+void PclObstacleDetector::cloudcb(const PointCloud::ConstPtr &cloud_input)
 {
-    const PointCloud::ConstPtr &cloud_raw = cloud_input;
-    const PointCloud::ConstPtr &cloud_acc = accumulate_cloud(cloud_raw);
-    const PointCloud::ConstPtr &cloud_segmented = segment_cloud(cloud_acc);
-    //const PointCloud::ConstPtr &cloud_clustered = cluster_cloud(cloud_reduced);
+    const PointCloud::ConstPtr &cloud_cut = cut_cloud(cloud_input);
+    const PointCloud::ConstPtr &cloud_sor = sor_cloud(cloud_cut);
+    const PointCloud::ConstPtr &cloud_vg = vg_cloud(cloud_sor);
+    const PointCloud::ConstPtr &cloud_acc = accumulate_cloud(cloud_vg);
+    const PointCloud::Ptr &cloud_clustered = cluster_cloud(cloud_sor);
 
-    //Start counting when cloud is accumulated
-    if (it_count > buffer_size && it_count%10 == 0) {
-      ROS_DEBUG_STREAM("------------ Lidar counter ----------");
-      ROS_DEBUG_STREAM("It: " << it_count);
-      for (auto &p: cloud_segmented->points) {
-	// Ros frame for easy comparison with rviz
-	ROS_DEBUG_STREAM("Pos: " << p.z << " " << p.y << " " << -p.x);
-      }
-      ROS_DEBUG_STREAM("-------------------------------------");
-    }
-    it_count++;
-
-    pub_reduced.publish(cloud_raw);
+    pub_cut.publish(cloud_cut);
+    pub_sor.publish(cloud_sor);
+    pub_vg.publish(cloud_vg);
+    pub_cluster.publish(cloud_clustered);
     pub_acc.publish(cloud_acc);
-    pub_segmented.publish(cloud_segmented);
-    //pub_obstacles.publish(cloud_clustered);
 }
 
+/***
+** Constructor
+***/
 PclObstacleDetector::PclObstacleDetector(const ros::NodeHandle &nh)
 : nh(nh)
-, min_z(-7.0)
-, max_z(7.0)
-, local_radius(35000.0)
-, voxel_width(50000.0)
-, voxel_height(50000.0)
-, seg_cluster_tolerance(400.0)
-, min_cluster_points(1)
-, max_cluster_points(50)
-, buffer_size(1) //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-, search_radius(5000.0)
-, min_neighbors_in_radius(1)
-, min_points(1)
-, max_points(20)
-, clu_cluster_tolerance(10000.0)
-, long_distance(true)
-, discard_distance(120000.0)
-, it_count(0)
-{
+, crop_min_z(20)
+, crop_max_z(200.0)
+, meanK(50)
+, stddevMul(0.0)
+, lx(2.0f)
+, ly(2.0f)
+, lz(2.0f)
+, buffer_size(3)
+, cluster_tolerance(1.5)
+, cluster_min_points(10)
+, cluster_max_points(100)
 
+{
     this->sub = this->nh.subscribe("/camera_array/points2", 1, &PclObstacleDetector::cloudcb, this); //!!!!!!!!!!!!!!!!!!!
-    this->pub_reduced = this->nh.advertise<PointCloud>("/lidar/reduced", 1); ///////////<!!!!!!!!!!!!!!!!
-    this->pub_segmented = this->nh.advertise<PointCloud>("/lidar/segmented", 1);  ///////////<!!!!!!!!!!!!!!!!
-    this->pub_acc = this->nh.advertise<PointCloud>("/lidar/accumulated", 1); ///////////<!!!!!!!!!!!!!!!!
+    this->pub_cut = this->nh.advertise<PointCloud>("/ptcloud/cut", 1);
+    this->pub_sor = this->nh.advertise<PointCloud>("/ptcloud/sor", 1);
+    this->pub_vg = this->nh.advertise<PointCloud>("/ptcloud/vg", 1);
+    this->pub_cluster = this->nh.advertise<PointCloud>("/ptcloud/cluster", 1);
+    this->pub_acc = this->nh.advertise<PointCloud>("/ptcloud/accumulated", 1); ///////////<!!!!!!!!!!!!!!!!
     ROS_INFO_STREAM("INIT: PCL Obstacle Detector initalized");
+
+    dynamic_reconfigure::Server<clustering_ptcloud::pclseg_reConfig>::CallbackType cb;
+    cb = boost::bind(&PclObstacleDetector::configCallback, this, _1, _2);
+    dr_srv_.setCallback(cb);
 }
 
-int
-main(int argc, char** argv)
+
+/***
+** Dynamic Reconfigure for dynamically tuning the parameters
+***/
+void PclObstacleDetector::configCallback(clustering_ptcloud::pclseg_reConfig &config, uint32_t level){
+  ROS_INFO_STREAM("Mean: " << this->meanK << "   std:" << this->stddevMul <<"lx: " << this->lx
+  << " ly:" << this->ly << " lz:" << this->lz);
+    this->crop_min_z = config.crop_min_z;
+    this->crop_max_z = config.crop_max_z;
+    this->meanK = config.meanK;
+    this->stddevMul = config.stddevMul;
+    this->lx = config.lx;
+    this->ly = config.ly;
+    this->lz = config.lz;
+    this->buffer_size = config.buffer_size;
+    this->cluster_tolerance = config.cluster_tolerance;
+    this->cluster_min_points = config.cluster_min_points;
+    this->cluster_max_points = config.cluster_max_points;
+}
+
+
+int main(int argc, char** argv)
 {
     ros::init(argc, argv, "pcl_obstale_detector");
     ros::NodeHandle nh("");

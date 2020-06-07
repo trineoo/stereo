@@ -189,7 +189,7 @@ void PointCloud2Nodelet::imageCb(const ImageConstPtr& l_image_msg,
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(*points_msg, "g");
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(*points_msg, "b");
 
-  float bad_point = std::numeric_limits<float>::quiet_NaN (); //10000;//!trine!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  float bad_point = 10000;//std::numeric_limits<float>::quiet_NaN (); //!trine!!!!!!!!!!!!!!!!!!!!!!!!!!!
   for (int v = 0; v < mat.rows; ++v)
   {
     for (int u = 0; u < mat.cols; ++u, ++iter_x, ++iter_y, ++iter_z)

@@ -3,8 +3,8 @@
 <launch>
 
   <!-- either, litenBat, middelsBat or langtUnnaKai -->
-  <arg name="path" value="/home/stereo/stereo_vision/Bagfiles/Bratt0505/" />
-  <arg name="file" default="middelsBat" />
+  <arg name="path" value="/home/stereo/STEREO_SYSTEM/bagfiles/2105/" />
+  <arg name="file" default="1" />
 
 
     <!-- bagfile Set fake time for the clustering -->
