@@ -11,8 +11,28 @@
 #include <pcl/point_cloud.h>
 #include <pcl/segmentation/extract_clusters.h>
 
+#include <custom_msgs/DetectedObjects.h>
+#include <custom_msgs/Object.h>
+#include <custom_msgs/NorthEastHeading.h>
+#include <custom_msgs/gnssGGA.h>
+
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+
+#include <custom_libraries/convert_to_NED.hpp>
+
+using namespace message_filters;
+
+char path1[80] = "/home/stereo/STEREO_SYSTEM/Experiment/clusteringPtCloud_depths/bag333.csv";
+
+
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 typedef pcl::CentroidPoint<pcl::PointXYZ> CentroidPoint;
+
+double heading_MA;
+ros::Publisher detected_objects_pub;
 
 class PclObstacleDetector {
 public:
@@ -261,11 +281,59 @@ void PclObstacleDetector::configCallback(clustering_ptcloud::pclseg_reConfig &co
 }
 
 
+
+void headingCallback(const custom_msgs::NorthEastHeading::ConstPtr& heading){
+  heading_MA = heading->heading;
+}
+
+
+
+void callback(const pcl::PointCloud<pcl::PointXYZ>::ConstPtr &cloud, const custom_msgs::gnssGGA::ConstPtr& pos){
+  std::ofstream myfile;
+  myfile.open(path1, std::ios::out | std::ios::app);
+
+  custom_msgs::DetectedObjects detected_objects;
+  custom_msgs::Object object;
+
+  std::vector<double> position_MA = lla2nedPiren(pos->latitude, pos->longitude, pos->altitude);
+
+  for(int i = 0; i <cloud->points.size(); i++){
+    std::vector<double> obj_NED = objectCoord2NED(cloud->points[i].x, cloud->points[i].y, cloud->points[i].z, position_MA[0], position_MA[1], position_MA[2], heading_MA);
+    object.north = obj_NED[0];
+    object.east  = obj_NED[1];
+    object.down  = obj_NED[2];
+    object.width = 0;
+    object.Class = "0";
+    detected_objects.objects.push_back(object);
+  }
+
+  detected_objects.header = pos->header;
+  detected_objects_pub.publish(detected_objects);
+  myfile.close();
+}
+
+
+
+
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "pcl_obstale_detector");
     ros::NodeHandle nh("");
     ros::Rate r(15.0);
+
+    std::ofstream myfile;
+    myfile.open(path1, std::ios::out);
+    myfile <<"time"<<","<< "depth" <<std::endl;
+
+    message_filters::Subscriber<PointCloud> ptCloud_sub(nh, "/ptcloud/cluster", 1);
+    message_filters::Subscriber<custom_msgs::gnssGGA> position_sub(nh, "/vectorVS330/fix", 1);
+
+    TimeSynchronizer<PointCloud, custom_msgs::gnssGGA> sync(ptCloud_sub, position_sub, 10);
+    sync.registerCallback(boost::bind(&callback, _1, _2));
+
+    ros::Subscriber heading_sub = nh.subscribe("/navigation/eta", 1000, headingCallback);
+    detected_objects_pub = nh.advertise<custom_msgs::DetectedObjects>("detected_objects", 10);
 
     PclObstacleDetector pcl_obst_det(nh);
     while (ros::ok()) {

@@ -8,6 +8,8 @@ find_package(catkin REQUIRED COMPONENTS
     pcl_ros
     geometry_msgs
     dynamic_reconfigure
+    custom_msgs
+    custom_libraries
 )
 find_package(Boost REQUIRED COMPONENTS thread)
 

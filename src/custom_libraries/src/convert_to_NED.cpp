@@ -40,6 +40,70 @@ geometry_msgs::TransformStamped broadcast_tf(std:string parent, std:string child
 }*/
 
 
+std::vector<double> lla2nedPiren(double lat_deg, double long_deg, double altitude){
+    double lat0_deg  = 63.4389029083;
+    double long0_deg = 10.39908278;
+    double altitude0 = 39.923;
+
+    double deg2rad = M_PI/180;
+    double rad2deg = 180/M_PI;
+
+    double lat_rad   = lat_deg * deg2rad;
+    double long_rad  = long_deg * deg2rad;
+    double lat0_rad  = lat0_deg * deg2rad;
+    double long0_rad = long0_deg * deg2rad;
+
+    //From vik 2012 - page 4 - table 1.1
+    double re        = 6378137.0;  // [m]
+    double rp        = 6356752.0;  // [m]
+    double rad_curve = pow(re,2) / (sqrt(pow(re,2) * pow(cos(lat_rad),2) + pow(rp,2) * pow(sin(lat_rad),2)));  //N in vik
+
+    // LLA to ECEF
+    double xe = (rad_curve + altitude) * cos(lat_rad) * cos(long_rad);
+    double ye = (rad_curve + altitude) * cos(lat_rad) * sin(long_rad);
+    double ze = ((pow(rp, 2) / pow(re, 2)) * rad_curve + altitude) * sin(lat_rad);
+
+    double xe0 = (rad_curve + altitude0) * cos(lat0_rad) * cos(long0_rad);
+    double ye0 = (rad_curve + altitude0) * cos(lat0_rad) * sin(long0_rad);
+    double ze0 = ((pow(rp, 2) / pow(re, 2)) * rad_curve + altitude0) * sin(lat0_rad);
+
+    // ECEF to NED
+    double cosPhi    = cos(lat0_rad);
+    double sinPhi    = sin(lat0_rad);
+    double cosLambda = cos(long0_rad);
+    double sinLambda = sin(long0_rad);
+
+    double dist   = cosLambda * xe + sinLambda * ye;
+    double uNorth = -sinPhi * dist + cosPhi * ze;
+    double vEast  = -sinLambda * xe + cosLambda * ye;
+    double wDown  = -(cosPhi * dist + sinPhi * ze);
+
+    // ECEF0 to NED0
+    double cosPhi0    = cosPhi;
+    double sinPhi0    = sinPhi;
+    double cosLambda0 = cosLambda;
+    double sinLambda0 = sinLambda;
+
+    double dist0   = cosLambda0 * xe0 + sinLambda0 * ye0;
+    double vEast0  = -sinLambda0 * xe0 + cosLambda0 * ye0;
+    double wDown0  = -(cosPhi0 * dist0 + sinPhi0 * ze0);
+    double uNorth0 = -sinPhi0 * dist0 + cosPhi0 * ze0;
+
+    // Compute difference
+    double N = uNorth - uNorth0;  // [m]
+    double E = vEast - vEast0;   // [m]
+    double D = wDown - wDown0;   // [m]
+
+    std::vector<double> NED;
+    NED.push_back(N);
+    NED.push_back(E);
+    NED.push_back(D);
+
+    return NED;
+
+}
+
+
 
 std::vector<double> lla2ned(double lat_deg, double long_deg, double altitude, double lat0_deg, double long0_deg, double altitude0){
     double deg2rad = M_PI/180;
