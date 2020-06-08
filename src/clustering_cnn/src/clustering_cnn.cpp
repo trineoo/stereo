@@ -37,8 +37,6 @@
 
 #include <fstream>
 
-char path1[70] = "/home/stereo/STEREO_SYSTEM/GPS/clusteringCNNDepthNED.csv";
-
 double heading_MA;
 
 
@@ -86,15 +84,9 @@ void headingCallback(const custom_msgs::NorthEastHeading::ConstPtr& heading){
 
 
 void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_ros_msgs::BoundingBoxes::ConstPtr& objects, const sensor_msgs::CameraInfo::ConstPtr& l_cam_info, const sensor_msgs::CameraInfo::ConstPtr& r_cam_info, const custom_msgs::gnssGGA::ConstPtr& pos){
-    //std::ofstream myfile;
-    //myfile.open(path1, std::ios::out | std::ios::app);
     custom_msgs::DetectedObjects detected_objects;
 
-    // NED frame Piren
-    double lat0_deg  = 63.4389029083;
-    double long0_deg = 10.39908278;
-    double altitude0 = 39.923;
-    std::vector<double> position_MA = lla2ned(pos->latitude, pos->longitude, pos->altitude, lat0_deg, long0_deg, altitude0);
+    std::vector<double> position_MA = lla2nedPiren(pos->latitude, pos->longitude, pos->altitude);
 
     image_geometry::StereoCameraModel model;
     model.fromCameraInfo(l_cam_info, r_cam_info);
@@ -123,9 +115,9 @@ void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_r
       model.projectDisparityTo3d(point_uv, med, point_xyz);
 
       geometry_msgs::Point coord;
-      coord.x = point_xyz.x/1000;
+      coord.x = (point_xyz.x/1000);
       coord.y = point_xyz.y/1000;
-      coord.z = point_xyz.z/1000;
+      coord.z = (point_xyz.z/1000);
 
       cv::Point3d xmin_xyz, xmax_xyz;
       model.projectDisparityTo3d(cv::Point2d(objects->bounding_boxes[i].xmin, objects->bounding_boxes[i].ymin), dmat.at<float>(objects->bounding_boxes[i].ymin, objects->bounding_boxes[i].xmin),xmin_xyz);
@@ -142,17 +134,12 @@ void callback(const stereo_msgs::DisparityImage::ConstPtr& disp, const darknet_r
       object.width = obj_width;
       object.Class = objects->bounding_boxes[i].Class;
 
-
-      //float depth = sqrt(pow(obj_NED[0]-position_MA[0],2)+pow(obj_NED[1]-position_MA[1],2));
-      //float depth1 = sqrt(pow(coord.x,2)+pow(coord.z,2));
-      //myfile << objects->header.stamp.sec <<","<<coord_NED.x<<","<<coord_NED.y <<","<<heading_MA<<std::endl;
-      //myfile << objects->header.stamp.sec <<","<<depth<<","<<depth1 <<std::endl;
-      detected_objects.objects.push_back(object);
-
+      if (coord.z  < 250){
+        detected_objects.objects.push_back(object);
+      }
     }
     detected_objects.header = objects->header;
     detected_objects_pub.publish(detected_objects);
-  //  myfile.close();
 }
 
 
@@ -162,12 +149,6 @@ int main(int argc, char** argv){
   ros::NodeHandle nh;
 
   heading_MA = 0;
-
-  //std::ofstream myfile;
-  //myfile.open(path1, std::ios::out);
-  //myfile <<"time"<<","<< "depth" <<std::endl;
-
-
   detected_objects_pub = nh.advertise<custom_msgs::DetectedObjects>("detected_objects", 10);
 
   message_filters::Subscriber<sensor_msgs::CameraInfo> l_camInfo_sub(nh, "/camera_array/left/camera_info", 1);
@@ -175,9 +156,7 @@ int main(int argc, char** argv){
   message_filters::Subscriber<stereo_msgs::DisparityImage> disp_sub(nh, "/camera_array/disparity", 100);
   message_filters::Subscriber<darknet_ros_msgs::BoundingBoxes> objects_sub(nh, "/darknet_ros/bounding_boxes", 1);
   message_filters::Subscriber<custom_msgs::gnssGGA> position_sub(nh, "/vectorVS330/fix", 1);
-  //TimeSynchronizer<stereo_msgs::DisparityImage,darknet_ros_msgs::BoundingBoxes, sensor_msgs::CameraInfo,sensor_msgs::CameraInfo, custom_msgs::gnssGGA> sync(disp_sub, objects_sub, l_camInfo_sub, r_camInfo_sub, position_sub, 10);
-  typedef sync_policies::ApproximateTime<stereo_msgs::DisparityImage,darknet_ros_msgs::BoundingBoxes, sensor_msgs::CameraInfo,sensor_msgs::CameraInfo, custom_msgs::gnssGGA> MySyncPolicy;
-  Synchronizer<MySyncPolicy> sync(MySyncPolicy(100), disp_sub, objects_sub, l_camInfo_sub, r_camInfo_sub, position_sub);
+  TimeSynchronizer<stereo_msgs::DisparityImage,darknet_ros_msgs::BoundingBoxes, sensor_msgs::CameraInfo,sensor_msgs::CameraInfo, custom_msgs::gnssGGA> sync(disp_sub, objects_sub, l_camInfo_sub, r_camInfo_sub, position_sub, 10);
   sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4, _5));
 
   ros::Subscriber heading_sub = nh.subscribe("/navigation/eta", 1000, headingCallback);
