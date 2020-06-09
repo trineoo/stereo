@@ -1,5 +1,5 @@
 # Stereo Vision for Autonomous ferry - code
-The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at Norwegian University of Science and Technology. "Stereo Vision for Autonomous ferry" goes into detail of the calibration, the chosen stereo setup and the implementation for testing in dynamic scenes. The ownship has adequate data to sense, process and understand its surroundings.
+The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at Norwegian University of Science and Technology. "Stereo Vision for Autonomous ferry" goes into detail of the calibration, the chosen stereo setup, and the implementation for testing in dynamic scenes. The ownship has adequate data to sense, process, and understand its surroundings.
 
 ## Contents
 * [Getting Started](#getting-started)
@@ -14,9 +14,9 @@ The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at N
 
 
 ### Prerequisites
- * Setup a computer with GPU and Ubuntu 16.04. This is tested on a Dell something something.
- * Install Spinnaker and verify that you can run your cameras with SpinViw (prefer Windows operating system). Setup a stereo system with either hardware og software triggering. Modify the yaml files in spinnaked-sdk-driver replacing the cam-ids and master cam serial number to match your camera's serial number. Also include the calibration parameters in.... This repo is tested with [Blackfly S GigE](https://www.flir.com/products/blackfly-s-gige/?model=BFS-PGE-50S5C-C), using PoE, master software triggering and GPIO pins for external triggering the slave. 
- * Optionally: Set up the  [LiDAR driver](http://wiki.ros.org/velodyne/Tutorials/Getting%20Started%20with%20the%20Velodyne%20VLP16). The LiDAR needs to be calibrated agaisnt the stereo camera to be used as a Ground Truth or as basis for comparison. The code is tested using [Velodyne LiDAR Puck-16](http://www.isaza.co/VELODYNE/63-9243%20Rev%20B%20User%20Manual%20and%20Programming%20Guide,VLP-16.pdf)
+ * Set up a computer with GPU and Ubuntu 16.04. This is tested on a Dell something something.
+ * Install Spinnaker and verify that you can run your cameras with SpinViw (prefer Windows operating system). Set up a stereo system with either hardware or software triggering. Modify the yaml files in spinnaker-sdk-driver replacing the cam-ids and master cam serial number to match your camera's serial number. Also include the calibration parameters in.... This repo is tested with [Blackfly S GigE](https://www.flir.com/products/blackfly-s-gige/?model=BFS-PGE-50S5C-C), using PoE, master software triggering, and GPIO pins for external triggering the slave. 
+ * Optionally: Set up the  [LiDAR driver](http://wiki.ros.org/velodyne/Tutorials/Getting%20Started%20with%20the%20Velodyne%20VLP16). The LiDAR needs to be calibrated against the stereo camera to serve as a Ground Truth or as a basis for comparison. The code is tested using [Velodyne LiDAR Puck-16](http://www.isaza.co/VELODYNE/63-9243%20Rev%20B%20User%20Manual%20and%20Programming%20Guide,VLP-16.pdf)
 
 ### Installing
 * [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
@@ -24,15 +24,16 @@ The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at N
 * [Python](https://www.python.org/downloads/). The scripts is tested with Python 2.7.12 
   1. [Matplotlib](https://matplotlib.org/users/installing.html) and [OpenCV](https://opencv.org/)
     ```bash
-    python -mpip install -U pip  #Installs Python pip
+    sudo apt install python-pip #Installs Python pip
+    python -mpip install -U pip  
     python -mpip install -U matplotlib #Plot the results by installing Matplotlib
-    python -mpip install -U opencv-python #Show animation by installing 
+    python -mpip install -U opencv-python #Show animation by opencv
     ```
  * For the stereoTuner the gtk3 development files is needed for cmake: 
    `sudo apt-get install build-essential libgtk-3-dev`
 
 ## System overview
-Bilde av systemet/systemflow kommer :))
+Image of the system/rosgraph to be announced :))
 
 
 ## Launch 
@@ -58,10 +59,14 @@ Bilde av systemet/systemflow kommer :))
     2. `rosrun image_view stereo_view stereo:=/camera_array image:=image_raw`
 * Left rectified image
     3. `rosrun image_view image_view image:=/camera_arr/left/image_rect_color`
+
 #### Clustering Point Cloud
 * `roslaunch clustering pcl_obstacle_detector.launch #Need the bagfile to be run with the "--clock"`
 * Tuning the parameters: `rosrun rqt_reconfigure rqt_reconfigure`
 * Visualize in rviz: `rosrun rviz rviz -f velodyne`
+The package filter and cluster the point cloud, publishing the point clous and clusters in NED coordinates. 
+The class makes use of PassThrough filter, Statistical Outlier Removal, Voxel Grid filter, accumulates subsequent point clouds, and Euclidean clustering.
+
 #### Darknet_ros (YOLOv3)
 * `roslaunch darknet_ros yolo_v3.launch  #subscribes on camera_array/left/image_rect_color`
 #### Clustering Convolutional Neural Network
@@ -70,16 +75,16 @@ Bilde av systemet/systemflow kommer :))
 * `rosrun navigation_data *filename*`
 
 ## Connect to Network on MilliAmpere
-If the code is to be run with the master core on the ferry Milliampere a local network need to be setup. The best solution is to set up a separate static network on the computer through usb3. 
+If the code is to be run with the master core on the ferry Milliampere a local network needs to be setup. The best solution is to set up a separate static network on the computer through usb3. 
 
   ```bash
   ifconfig #find your network
   sudo nano /etc/network/interfaces #add/make the network static
   nano /etc/hosts #add milliAmpere as host on machine, further do the same at milliAmpere
   sudo ifdown "your network" && sudo ifup "your network" #restarting interface
-  ping milliAmpere #check if connection established
+  ping milliAmpere #check if connection established 
   ```
-Now that you have created a static network, one have to export the roscore. Telling your machine the roscore is running on anoher computer. Be sure to do this in every terminal window (can be advanatges to add in nano .bashrc) 
+Now that you have created a static network, one has to export the roscore. Telling your machine the roscore is running on another computer. Be sure to do this in every terminal window (can be an advantage to add in nano .bashrc) 
   ```bash
   export ROS_MASTER_URI=http://milliAmpere:11311
   echo $ROS_MASTER_URI
@@ -87,7 +92,7 @@ Now that you have created a static network, one have to export the roscore. Tell
   ```
 ## Application and Scrips
 ### stereoTuner
-Application for tuning the disaprity map. Using the stereoBM object and WLS filter from openCV. The GUI is a modified version of the repository [stereo-tuner](https://github.com/guimeira/stereo-tuner). Remember to rectify the images in beforehand, you're welcome. 
+Application for tuning the disparity map, implemented using the stereoBM object and WLS filter from openCV. The GUI is a modified version of the repository [stereo-tuner](https://github.com/guimeira/stereo-tuner). Remember to rectify the images beforehand; you're welcome. 
 It is a simple little GTK application that can be used to tune parameters for the OpenCV Stereo Vision algorithms.
   ```bash
   mkdir build
@@ -113,7 +118,7 @@ make
 <img src="/applications_scripts/stereoTuner/illustration.png"/>
 
 ### Precision-recall curve for YOLOv3
-Plot and calculate the precision-recall curve from ground thruth images. It iterates through two for-loops, one with IoU-threshold and the second with the YOLO-threshold. Make sure to input detection images from the network with threshold less than the ones in the for-loop in main.py. The mAP script is a modifed version of the code in the github repository [mAp](https://github.com/Cartucho/mAP). It outputs a precision-recall curve for each threshold and IoU-threshold in main.py
+Plot and calculate the precision-recall curve from ground truth images. It iterates through two for-loops, one with IoU-threshold and the second with the YOLO-threshold. Make sure to input detection images from the network with threshold less than the ones in the for-loop in main.py. The mAP script is a modified version of the code in the github repository [mAp](https://github.com/Cartucho/mAP). It outputs a precision-recall curve for each threshold and IoU-threshold in main.py
 
 * Create the ground truth files using [Label YOLO images](#Label-YOLO-images)
   1. Insert images into the folder input/ground-truth/images 
@@ -136,8 +141,9 @@ Feel free to edit the main file with your preferred values in the for-loops.
 <img src="/applications_scripts/precision-recall/scripts/extra/thresChange0.1.png"/>
 
 ### Plot and calculate ground truth depth and stereo depth
-Match handhold-GPS csv file with the GPS from MA by satellite time. Match the stereo ros-time and plot a beautiful graph. 
+Match handhold-GPS csv file with the GPS from MA by satellite time. Match the stereo ros-time and plots a beautiful graph. 
 
+TODO: add script to git and image? 
 
 
 ## Authors and License
