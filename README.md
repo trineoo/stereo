@@ -139,7 +139,7 @@ Plots and calculates the precision-recall curve from ground truth images. It ite
   1. Note: To run the script once, for a given IoU-threshold and YOLO-threshold,run the following command line. This wil process mAP, detection result information etc in the folder /output. 
       `python precision-recall.py "IoU-threshold" "YOLO-threshold"`
 
-note: Be consistent with using rectifiec/not-rectified images. 
+Note: be consistent with using rectified/not-rectified images. 
   ```bash
   python main.py
   ```
