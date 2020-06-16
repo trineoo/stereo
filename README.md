@@ -40,7 +40,7 @@ Example of the stereo system tested. The baseline in use measures 1.8meters, and
    `sudo apt-get install build-essential libgtk-3-dev`
 
 ## System overview
-Image of the system/rosgraph to be announced :))
+
 
 
 ## Launch 
