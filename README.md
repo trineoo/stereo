@@ -11,12 +11,14 @@ The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at N
 
 
 ## Getting Started
-
+<img src="stereoSystem.png"/>
+Example of the stereo system tested. The baseline in use measures 1.8meters, and the cameras are angled 1 degree inwards. The stereo system was tested using [Blackfly S GigE](https://www.flir.com/products/blackfly-s-gige/?model=BFS-PGE-50S5C-C) with PoE, master software triggering, and GPIO pins for external triggering the slave. The [Velodyne LiDAR Puck-16](http://www.isaza.co/VELODYNE/63-9243%20Rev%20B%20User%20Manual%20and%20Programming%20Guide,VLP-16.pdf) serves as ground truth for the system. 
 
 ### Prerequisites
- * Set up a computer with GPU and Ubuntu 16.04. This is tested on a Dell something something.
- * Install Spinnaker and verify that you can run your cameras with SpinViw (prefer Windows operating system). Set up a stereo system with either hardware or software triggering. Modify the yaml files in spinnaker-sdk-driver replacing the cam-ids and master cam serial number to match your camera's serial number. Also include the calibration parameters in.... This repo is tested with [Blackfly S GigE](https://www.flir.com/products/blackfly-s-gige/?model=BFS-PGE-50S5C-C), using PoE, master software triggering, and GPIO pins for external triggering the slave. 
- * Optionally: Set up the  [LiDAR driver](http://wiki.ros.org/velodyne/Tutorials/Getting%20Started%20with%20the%20Velodyne%20VLP16). The LiDAR needs to be calibrated against the stereo camera to serve as a Ground Truth or as a basis for comparison. The code is tested using [Velodyne LiDAR Puck-16](http://www.isaza.co/VELODYNE/63-9243%20Rev%20B%20User%20Manual%20and%20Programming%20Guide,VLP-16.pdf)
+ * Set up a computer with GPU and Ubuntu 16.04. The repo is tested on Dell Precision 7530 with NVIDIA Quadro P3200.
+ * Set up a stereo system, and perform stereo calibration for the cameras. 
+ * Install Spinnaker and verify that you can run your cameras with SpinViw (prefer Windows operating system). Set up a stereo system with either hardware or software triggering. Modify the yaml files in spinnaker-sdk-driver replacing the cam-ids and master cam serial number to match your camera's serial number. In the same yaml file, include the calibration parameters. (If using Matlab for calibration, make sure to convert the numbers to OpenCV calibration definitions)
+ * Optionally: Set up the [LiDAR driver](http://wiki.ros.org/velodyne/Tutorials/Getting%20Started%20with%20the%20Velodyne%20VLP16). The LiDAR needs to be calibrated against the stereo camera to serve as a basis for comparison.
 
 ### Installing
 * [ROS Kinetic](http://wiki.ros.org/kinetic/Installation/Ubuntu)
@@ -102,6 +104,8 @@ It is a simple little GTK application that can be used to tune parameters for th
   ./main
   ```
 
+<img src="/applications_scripts/stereoTuner/illustration.png"/>
+
 ### Label YOLO images
 GUI for marking bounded boxes of objects in images for training Yolo v3. 
 
@@ -114,8 +118,6 @@ cmake .
 make
 ./linux_mark.sh
 ```
-
-<img src="/applications_scripts/stereoTuner/illustration.png"/>
 
 ### Precision-recall curve for YOLOv3
 Plot and calculate the precision-recall curve from ground truth images. It iterates through two for-loops, one with IoU-threshold and the second with the YOLO-threshold. Make sure to input detection images from the network with threshold less than the ones in the for-loop in main.py. The mAP script is a modified version of the code in the github repository [mAp](https://github.com/Cartucho/mAP). It outputs a precision-recall curve for each threshold and IoU-threshold in main.py
