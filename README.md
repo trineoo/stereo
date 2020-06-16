@@ -11,7 +11,8 @@ The project is a part of TTK4900 - Engineering Cybernetics, Master's Thesis at N
 
 
 ## Getting Started
-<img src="stereoSystem.png"/>
+<p align="center">
+<img src="stereoSystem.png" title="Stereoooboo" alt="FVCproductions" ></p>
 Example of the stereo system tested. The baseline in use measures 1.8meters, and the cameras are angled 1 degree inwards. The stereo system was tested using [Blackfly S GigE](https://www.flir.com/products/blackfly-s-gige/?model=BFS-PGE-50S5C-C) with PoE, master software triggering, and GPIO pins for external triggering the slave. The [Velodyne LiDAR Puck-16](http://www.isaza.co/VELODYNE/63-9243%20Rev%20B%20User%20Manual%20and%20Programming%20Guide,VLP-16.pdf) serves as ground truth for the system. 
 
 ### Prerequisites
